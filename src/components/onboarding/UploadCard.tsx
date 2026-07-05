@@ -64,9 +64,6 @@ export default function UploadCard({
       <Card style={[styles.uploadCard, styles.emptyUploadCard]}>
         <Text style={styles.emptyCardIcon}>📄</Text>
         <Text style={styles.emptyCardTitle}>Upload {title}</Text>
-        <Text style={styles.emptyCardSubtitle}>
-          Tap to capture or choose from gallery
-        </Text>
       </Card>
     </Pressable>
   );
