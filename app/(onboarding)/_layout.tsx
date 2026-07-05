@@ -1,15 +1,14 @@
-import { Tabs } from 'expo-router';
+import { Stack } from 'expo-router';
 import { OnboardingProvider } from '../../src/context/OnboardingContext';
 
 export default function OnboardingLayout() {
   return (
     <OnboardingProvider>
-      <Tabs screenOptions={{ headerShown: false }}>
-        <Tabs.Screen name="home" options={{ title: 'Home' }} />
-        <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
-        {/* Hide the new-guard onboarding flow from the bottom tab bar */}
-        <Tabs.Screen name="new-guard" options={{ href: null }} />
-      </Tabs>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="home" />
+        <Stack.Screen name="new-guard" />
+        <Stack.Screen name="profile" />
+      </Stack>
     </OnboardingProvider>
   );
 }

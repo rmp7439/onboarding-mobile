@@ -1,56 +1,130 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Pressable, 
+  Animated, 
+  LayoutAnimation, 
+  Platform, 
+  UIManager 
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen, Card, SectionTitle } from '../../src/components';
 import { colors, spacing, typography, radius } from '../../src/theme';
 
-const RECENT_EMPLOYEES = [
-  { id: '1', name: 'Vikram Sharma', status: 'Pending', time: '10:30 AM' },
-  { id: '2', name: 'Suresh Singh', status: 'Completed', time: '09:15 AM' },
-  { id: '3', name: 'Amit Kumar', status: 'Rejected', time: 'Yesterday' },
-  { id: '4', name: 'Rahul Verma', status: 'Completed', time: 'Yesterday' },
-];
+// Enable LayoutAnimation for Android
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const animationController = useRef(new Animated.Value(0)).current;
 
-  const handleStartRegistration = () => {
-    router.push('/(onboarding)/new-guard/aadhaar-upload');
+  const toggleAccordion = () => {
+    // Smooth layout expansion/collapse natively pushes content down
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    const nextState = !isExpanded;
+    setIsExpanded(nextState);
+
+    // Rotate chevron and fade content
+    Animated.timing(animationController, {
+      toValue: nextState ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
 
-  const getBadgeStyle = (status: string) => {
-    switch (status) {
-      case 'Completed':
-        return { backgroundColor: '#E8F8EE', color: colors.success }; // Light green
-      case 'Pending':
-        return { backgroundColor: '#FFF3E0', color: colors.warning }; // Light orange
-      case 'Rejected':
-        return { backgroundColor: '#FFEBEE', color: colors.error };   // Light red
-      default:
-        return { backgroundColor: colors.background, color: colors.textSecondary };
-    }
-  };
+  const chevronRotateInterpolate = animationController.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
+
+  const contentOpacity = animationController.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  interface MenuItemProps {
+    icon: string;
+    label: string;
+    onPress: () => void;
+    isDestructive?: boolean;
+  }
+
+  const MenuItem = ({ icon, label, onPress, isDestructive }: MenuItemProps) => (
+    <Pressable
+      style={({ pressed }) => [
+        styles.menuItem,
+        pressed && styles.menuItemPressed,
+      ]}
+      onPress={onPress}
+      android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
+    >
+      <Text style={styles.menuItemIcon}>{icon}</Text>
+      <Text style={[styles.menuItemLabel, isDestructive && styles.destructiveText]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
 
   return (
     <Screen style={styles.container}>
       {/* Welcome Header */}
       <View style={styles.header}>
-        <Text style={styles.greetingText}>Welcome back,</Text>
-        <Text style={styles.roleText}>Site Incharge</Text>
+        <Text style={styles.greetingText}>Welcome Back</Text>
       </View>
 
-      {/* Quick Action */}
-      <TouchableOpacity activeOpacity={0.8} onPress={handleStartRegistration}>
-        <Card style={styles.actionCard}>
-          <View style={styles.actionIconContainer}>
-            <Text style={styles.actionIcon}>+</Text>
-          </View>
-          <View>
-            <Text style={styles.actionTitle}>Register New Employee</Text>
-            <Text style={styles.actionSubtitle}>Start the onboarding process</Text>
-          </View>
-        </Card>
-      </TouchableOpacity>
+      {/* Operations Accordion */}
+      <Card style={styles.accordionCard}>
+        <Pressable 
+          style={styles.accordionHeader} 
+          onPress={toggleAccordion}
+          android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
+        >
+          <Text style={styles.accordionTitle}>Operations</Text>
+          <Animated.View style={{ transform: [{ rotate: chevronRotateInterpolate }] }}>
+            <Text style={styles.accordionChevron}>▼</Text>
+          </Animated.View>
+        </Pressable>
+
+        {isExpanded && (
+          <Animated.View style={[styles.accordionContent, { opacity: contentOpacity }]}>
+            <View style={styles.divider} />
+            <MenuItem 
+              icon="📝" 
+              label="Register New Employee" 
+              onPress={() => router.push('/(onboarding)/new-guard/aadhaar-upload')} 
+            />
+            <MenuItem 
+              icon="👥" 
+              label="View Employees" 
+              onPress={() => console.log('View Employees tapped')} 
+            />
+            <MenuItem 
+              icon="⏳" 
+              label="Pending Verification" 
+              onPress={() => console.log('Pending Verification tapped')} 
+            />
+            <MenuItem 
+              icon="👤" 
+              label="Profile" 
+              onPress={() => router.push('/(onboarding)/profile')} 
+            />
+            <MenuItem 
+              icon="🚪" 
+              label="Logout" 
+              onPress={() => console.log('Logout tapped')} 
+              isDestructive
+            />
+          </Animated.View>
+        )}
+      </Card>
 
       {/* Statistics */}
       <SectionTitle title="Overview" style={styles.sectionHeader} />
@@ -80,27 +154,6 @@ export default function HomeScreen() {
           </Card>
         </View>
       </View>
-
-      {/* Recent Employees */}
-      <SectionTitle title="Recent Employees" style={styles.sectionHeader} />
-      <View style={styles.activityContainer}>
-        {RECENT_EMPLOYEES.map((employee) => {
-          const badgeTheme = getBadgeStyle(employee.status);
-          return (
-            <Card key={employee.id} style={styles.employeeCard}>
-              <View style={styles.employeeInfo}>
-                <Text style={styles.employeeName}>{employee.name}</Text>
-                <View style={[styles.badge, { backgroundColor: badgeTheme.backgroundColor }]}>
-                  <Text style={[styles.badgeText, { color: badgeTheme.color }]}>
-                    {employee.status}
-                  </Text>
-                </View>
-              </View>
-              <Text style={styles.employeeTime}>{employee.time}</Text>
-            </Card>
-          );
-        })}
-      </View>
     </Screen>
   );
 }
@@ -123,45 +176,73 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
   },
-  actionCard: {
-    backgroundColor: colors.primary,
+  
+  // Accordion Styles
+  accordionCard: {
+    padding: 0, 
+    marginBottom: spacing['2xl'], // 24dp spacing before Overview
+    overflow: 'hidden',
+  },
+  accordionHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing['2xl'],
-    borderRadius: radius.lg,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.surface,
+    minHeight: 56, // Accessible touch target
   },
-  actionIconContainer: {
-    width: 48,
-    height: 48,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: radius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  actionIcon: {
-    color: colors.white,
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-  },
-  actionTitle: {
-    color: colors.white,
+  accordionTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    marginBottom: 2,
+    color: colors.text,
   },
-  actionSubtitle: {
-    color: 'rgba(255,255,255,0.8)',
+  accordionChevron: {
     fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.bold,
   },
+  accordionContent: {
+    backgroundColor: colors.surface,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.background,
+    marginHorizontal: spacing.lg,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    minHeight: 56, // 56dp touch target for enterprise apps
+  },
+  menuItemPressed: {
+    backgroundColor: colors.background,
+  },
+  menuItemIcon: {
+    fontSize: typography.fontSize.lg,
+    marginRight: spacing.md,
+    width: 24,
+    textAlign: 'center',
+  },
+  menuItemLabel: {
+    flex: 1,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text,
+  },
+  destructiveText: {
+    color: colors.error,
+  },
+
+  // Overview Section
   sectionHeader: {
     marginBottom: spacing.md,
   },
   statsContainer: {
-    marginBottom: spacing['2xl'],
+    flex: 1,
     gap: spacing.md,
+    marginBottom: spacing.md,
   },
   statsRow: {
     flexDirection: 'row',
@@ -180,40 +261,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   statLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-  },
-  activityContainer: {
-    marginBottom: spacing.xl,
-    gap: spacing.sm,
-  },
-  employeeCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.md,
-  },
-  employeeInfo: {
-    flex: 1,
-  },
-  employeeName: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.full,
-  },
-  badgeText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-  },
-  employeeTime: {
     fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
     fontWeight: typography.fontWeight.medium,

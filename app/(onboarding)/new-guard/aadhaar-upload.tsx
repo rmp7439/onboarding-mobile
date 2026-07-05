@@ -1,111 +1,245 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, Image, Alert, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { Screen, Card, SectionTitle, Button } from '../../../src/components';
 import { colors, spacing, typography, radius } from '../../../src/theme';
 import { useOnboarding } from '../../../src/context/OnboardingContext';
 
-const OCR_STEPS = [
-  'Uploading Aadhaar...',
-  'Detecting Document...',
-  'Reading Text...',
-  'Extracting Name...',
-  'Extracting Date of Birth...',
-  'Extracting Address...',
-  'Validating Aadhaar...',
-  'OCR Complete'
+const OCR_STAGES = [
+  'Scanning Document',
+  'Enhancing Image',
+  'Reading Text',
+  'Extracting Name',
+  'Extracting DOB',
+  'Extracting Address',
+  'Preparing Review'
 ];
+
+interface PreviewState {
+  uri: string;
+  side: 'front' | 'back';
+  source: 'gallery' | 'camera';
+  width: number;
+  height: number;
+  filename: string;
+}
 
 export default function AadhaarUploadScreen() {
   const router = useRouter();
   const { updateData } = useOnboarding();
   
-  const [frontImage, setFrontImage] = useState<boolean>(false);
-  const [backImage, setBackImage] = useState<boolean>(false);
+  const [frontImage, setFrontImage] = useState<string | null>(null);
+  const [backImage, setBackImage] = useState<string | null>(null);
+  
+  // OCR Processing State
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [currentStageIndex, setCurrentStageIndex] = useState<number>(0);
+
+  // Preview Screen State
+  const [preview, setPreview] = useState<PreviewState | null>(null);
 
   // Animation values
   const progress = useRef(new Animated.Value(0)).current;
-  const stepAnimations = useRef(OCR_STEPS.map(() => new Animated.Value(0))).current;
-  const stepTranslateY = useRef(OCR_STEPS.map(() => new Animated.Value(10))).current;
+  const textOpacity = useRef(new Animated.Value(1)).current;
+  const scanLineY = useRef(new Animated.Value(0)).current;
+  const previewAnim = useRef(new Animated.Value(0)).current;
+  
+  const stepIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       progress.stopAnimation();
-      stepAnimations.forEach(anim => anim.stopAnimation());
-      stepTranslateY.forEach(anim => anim.stopAnimation());
+      textOpacity.stopAnimation();
+      scanLineY.stopAnimation();
+      previewAnim.stopAnimation();
+      if (stepIntervalRef.current) {
+        clearInterval(stepIntervalRef.current);
+      }
     };
   }, []);
 
+  const handlePickImage = async (side: 'front' | 'back', source: 'gallery' | 'camera') => {
+    try {
+      let result;
+
+      if (source === 'gallery') {
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (permissionResult.granted === false) {
+          Alert.alert('Permission Required', 'Permission to access the gallery is required!');
+          return;
+        }
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          quality: 0.8,
+        });
+      } else {
+        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+        if (permissionResult.granted === false) {
+          Alert.alert('Permission Required', 'Permission to access the camera is required!');
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          quality: 0.8,
+        });
+      }
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const filename = asset.fileName || asset.uri.split('/').pop() || 'document.jpg';
+        
+        setPreview({
+          uri: asset.uri,
+          side,
+          source,
+          width: asset.width,
+          height: asset.height,
+          filename
+        });
+
+        // Animate preview screen in
+        Animated.spring(previewAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          damping: 20,
+          stiffness: 150,
+        }).start();
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert('Error', 'Something went wrong while processing the image.');
+    }
+  };
+
+  const handleUseImage = () => {
+    if (!preview) return;
+    
+    // Save to the correct slot
+    if (preview.side === 'front') {
+      setFrontImage(preview.uri);
+    } else {
+      setBackImage(preview.uri);
+    }
+
+    // Animate preview out
+    Animated.timing(previewAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setPreview(null);
+    });
+  };
+
+  const handleRetake = () => {
+    if (!preview) return;
+    const { side, source } = preview;
+    
+    // Close preview and immediately reopen picker
+    Animated.timing(previewAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setPreview(null);
+      // Slight delay ensures the UI settles before opening native modals again
+      setTimeout(() => {
+        handlePickImage(side, source);
+      }, 100);
+    });
+  };
+
+  const handleCancelPreview = () => {
+    Animated.timing(previewAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setPreview(null);
+    });
+  };
+
   const handleContinue = () => {
     setIsProcessing(true);
+    setCurrentStageIndex(0);
     
-    // Reset animations
     progress.setValue(0);
-    stepAnimations.forEach(anim => anim.setValue(0));
-    stepTranslateY.forEach(anim => anim.setValue(10));
+    textOpacity.setValue(1);
+    scanLineY.setValue(0);
 
-    const staggerDelay = 400; // ms between each step showing up
-    const stepDuration = 300; // ms for the fade/slide animation
-    const totalDuration = staggerDelay * OCR_STEPS.length;
+    const totalDuration = OCR_STAGES.length * 800;
 
-    // Run progress bar and sequence of steps concurrently
-    Animated.parallel([
-      Animated.timing(progress, {
-        toValue: 1,
-        duration: totalDuration,
-        useNativeDriver: false, // width cannot use native driver
-      }),
-      Animated.stagger(
-        staggerDelay,
-        stepAnimations.map((anim, index) => 
-          Animated.parallel([
-            Animated.timing(anim, {
-              toValue: 1,
-              duration: stepDuration,
-              useNativeDriver: true,
-            }),
-            Animated.timing(stepTranslateY[index], {
-              toValue: 0,
-              duration: stepDuration,
-              useNativeDriver: true,
-            })
-          ])
-        )
-      )
-    ]).start(() => {
-      // Small pause after sequence finishes before navigating
-      setTimeout(() => {
-        updateData({
-          fullName: 'Vikram Sharma',
-          dateOfBirth: '15/08/1995',
-          gender: 'Male',
-          aadhaarNumber: '[Aadhaar Redacted]', 
-          address: '123 Main Street',
-          city: 'Mumbai',
-          state: 'Maharashtra',
-          pinCode: '400001',
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: totalDuration,
+      useNativeDriver: false,
+    }).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanLineY, {
+          toValue: 296,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scanLineY, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
+
+    let step = 0;
+    stepIntervalRef.current = setInterval(() => {
+      step++;
+      if (step >= OCR_STAGES.length) {
+        if (stepIntervalRef.current) clearInterval(stepIntervalRef.current);
+        
+        setTimeout(() => {
+          updateData({
+            fullName: 'Vikram Sharma',
+            dateOfBirth: '15/08/1995',
+            gender: 'Male',
+            aadhaarNumber: '[Aadhaar Redacted]', 
+            address: '123 Main Street',
+            city: 'Mumbai',
+            state: 'Maharashtra',
+            pinCode: '400001',
+          });
+          setIsProcessing(false);
+          router.push('/(onboarding)/new-guard/review-details');
+        }, 500);
+      } else {
+        Animated.sequence([
+          Animated.timing(textOpacity, { toValue: 0, duration: 200, useNativeDriver: true })
+        ]).start(() => {
+          setCurrentStageIndex(step);
+          Animated.timing(textOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
         });
-        setIsProcessing(false);
-        router.push('/(onboarding)/new-guard/review-details');
-      }, 600);
-    });
+      }
+    }, 800);
   };
 
   const renderUploadSection = (
     title: string,
-    isUploaded: boolean,
-    onUpload: () => void,
+    imageUri: string | null,
+    onGallery: () => void,
+    onCamera: () => void,
     onRemove: () => void
   ) => (
     <Card style={styles.uploadCard}>
       <Text style={styles.cardTitle}>{title}</Text>
-      {isUploaded ? (
+      {imageUri ? (
         <View style={styles.previewContainer}>
-          <View style={styles.previewBox}>
-            <Text style={styles.previewText}>Image Uploaded (Preview)</Text>
-          </View>
+          <Image 
+            source={{ uri: imageUri }} 
+            style={styles.thumbnailImage} 
+            resizeMode="cover" 
+          />
           <Button 
             title="Remove" 
             variant="outline" 
@@ -119,7 +253,7 @@ export default function AadhaarUploadScreen() {
           <Button 
             title="Upload from Gallery" 
             variant="outline" 
-            onPress={onUpload} 
+            onPress={onGallery} 
             style={styles.actionButton}
             disabled={isProcessing}
           />
@@ -127,7 +261,7 @@ export default function AadhaarUploadScreen() {
           <Button 
             title="Capture using Camera" 
             variant="secondary" 
-            onPress={onUpload} 
+            onPress={onCamera} 
             style={styles.actionButton}
             disabled={isProcessing}
           />
@@ -140,23 +274,25 @@ export default function AadhaarUploadScreen() {
     <Screen style={styles.container}>
       <View style={styles.content}>
         <SectionTitle
-          title="Upload Aadhaar"
-          subtitle="Upload both sides of the Aadhaar card for automatic information extraction."
+          title="Upload Document"
+          subtitle="Upload both sides of the document for automatic information extraction."
           style={styles.header}
         />
 
         {renderUploadSection(
           'Front Side',
           frontImage,
-          () => setFrontImage(true),
-          () => setFrontImage(false)
+          () => handlePickImage('front', 'gallery'),
+          () => handlePickImage('front', 'camera'),
+          () => setFrontImage(null)
         )}
 
         {renderUploadSection(
           'Back Side',
           backImage,
-          () => setBackImage(true),
-          () => setBackImage(false)
+          () => handlePickImage('back', 'gallery'),
+          () => handlePickImage('back', 'camera'),
+          () => setBackImage(null)
         )}
 
         <Card style={styles.infoCard}>
@@ -166,7 +302,7 @@ export default function AadhaarUploadScreen() {
             <Text style={styles.bulletText}>• Date of Birth</Text>
             <Text style={styles.bulletText}>• Gender</Text>
             <Text style={styles.bulletText}>• Address</Text>
-            <Text style={styles.bulletText}>• Aadhaar Number</Text>
+            <Text style={styles.bulletText}>• Document Number</Text>
           </View>
         </Card>
       </View>
@@ -180,44 +316,103 @@ export default function AadhaarUploadScreen() {
         />
       </View>
 
-      {/* OCR Processing Animated Overlay */}
+      {/* Full Screen Image Preview Overlay */}
+      {preview && (
+        <Animated.View 
+          style={[
+            styles.previewScreenOverlay,
+            {
+              opacity: previewAnim,
+              transform: [{
+                translateY: previewAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [100, 0] // Slide up slightly while fading in
+                })
+              }]
+            }
+          ]}
+        >
+          <SafeAreaView style={styles.previewSafeArea}>
+            <View style={styles.previewHeader}>
+              <Text style={styles.previewTitle}>Review Image</Text>
+              <Button title="Cancel" variant="outline" onPress={handleCancelPreview} style={styles.cancelPreviewBtn} />
+            </View>
+            
+            <View style={styles.previewImageWrapper}>
+              <Image 
+                source={{ uri: preview.uri }} 
+                style={styles.fullPreviewImage} 
+                resizeMode="contain" 
+              />
+            </View>
+
+            <View style={styles.previewFooter}>
+              <Card style={styles.previewDetailsCard}>
+                <View style={styles.previewDetailRow}>
+                  <Text style={styles.previewDetailLabel}>Filename:</Text>
+                  <Text style={styles.previewDetailValue} numberOfLines={1} ellipsizeMode="middle">
+                    {preview.filename}
+                  </Text>
+                </View>
+                <View style={styles.previewDetailRow}>
+                  <Text style={styles.previewDetailLabel}>Resolution:</Text>
+                  <Text style={styles.previewDetailValue}>
+                    {preview.width} x {preview.height}
+                  </Text>
+                </View>
+              </Card>
+              
+              <View style={styles.previewButtonRow}>
+                <Button 
+                  title="Retake" 
+                  variant="outline" 
+                  onPress={handleRetake} 
+                  style={styles.previewHalfBtn} 
+                />
+                <Button 
+                  title="Use Image" 
+                  onPress={handleUseImage} 
+                  style={styles.previewHalfBtn} 
+                />
+              </View>
+            </View>
+          </SafeAreaView>
+        </Animated.View>
+      )}
+
+      {/* OCR Processing Animated Overlay - Google Lens Style */}
       {isProcessing && (
         <View style={styles.processingOverlay}>
-          <Text style={styles.processingTitle}>Analyzing Document</Text>
           
-          <View style={styles.progressBarBackground}>
-            <Animated.View 
-              style={[
-                styles.progressBarFill, 
-                {
-                  width: progress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0%', '100%'],
-                  })
-                }
-              ]} 
-            />
+          <View style={styles.scannerBox}>
+            <View style={[styles.corner, styles.topLeft]} />
+            <View style={[styles.corner, styles.topRight]} />
+            <View style={[styles.corner, styles.bottomLeft]} />
+            <View style={[styles.corner, styles.bottomRight]} />
+            
+            <Animated.View style={[styles.scanLine, { transform: [{ translateY: scanLineY }] }]} />
           </View>
 
-          <View style={styles.stepsContainer}>
-            {OCR_STEPS.map((step, index) => (
-              <Animated.View
-                key={index}
+          <View style={styles.statusContainer}>
+            <Animated.Text style={[styles.stageText, { opacity: textOpacity }]}>
+              {OCR_STAGES[currentStageIndex]}...
+            </Animated.Text>
+            
+            <View style={styles.progressBarBackground}>
+              <Animated.View 
                 style={[
-                  styles.stepRow,
+                  styles.progressBarFill, 
                   {
-                    opacity: stepAnimations[index],
-                    transform: [{ translateY: stepTranslateY[index] }]
+                    width: progress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0%', '100%'],
+                    })
                   }
-                ]}
-              >
-                <View style={styles.stepCheckCircle}>
-                  <Text style={styles.stepCheckText}>✓</Text>
-                </View>
-                <Text style={styles.stepText}>{step}</Text>
-              </Animated.View>
-            ))}
+                ]} 
+              />
+            </View>
           </View>
+
         </View>
       )}
     </Screen>
@@ -234,35 +429,147 @@ const styles = StyleSheet.create({
   actionButton: { width: '100%' },
   buttonSpacer: { height: spacing.sm },
   previewContainer: { width: '100%' },
-  previewBox: { height: 140, backgroundColor: colors.background, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', marginBottom: spacing.md },
-  previewText: { color: colors.textSecondary, fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium },
+  thumbnailImage: { width: '100%', height: 140, borderRadius: radius.md, marginBottom: spacing.md, backgroundColor: colors.background },
   infoCard: { backgroundColor: colors.background, marginTop: spacing.xs, marginBottom: spacing.xl },
   infoTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.semibold, color: colors.success, marginBottom: spacing.sm },
   bulletPoints: { paddingLeft: spacing.sm },
   bulletText: { fontSize: typography.fontSize.sm, color: colors.textSecondary, marginBottom: spacing.xs },
   footer: { paddingVertical: spacing.md, marginTop: spacing.md },
   button: { width: '100%' },
+
+  // Preview Screen Styles
+  previewScreenOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.surface,
+    zIndex: 20, // Sit above everything
+  },
+  previewSafeArea: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  previewTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+  },
+  cancelPreviewBtn: {
+    height: 36,
+    paddingHorizontal: spacing.md,
+  },
+  previewImageWrapper: {
+    flex: 1,
+    backgroundColor: '#000', // Black background for image isolation
+    marginVertical: spacing.md,
+  },
+  fullPreviewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  previewFooter: {
+    padding: spacing.md,
+    paddingBottom: spacing.xl, // Extra padding for bottom edge
+  },
+  previewDetailsCard: {
+    backgroundColor: colors.background,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  previewDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  previewDetailLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  previewDetailValue: {
+    flex: 1,
+    fontSize: typography.fontSize.sm,
+    color: colors.text,
+    fontWeight: typography.fontWeight.semibold,
+    textAlign: 'right',
+    marginLeft: spacing.lg,
+  },
+  previewButtonRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  previewHalfBtn: {
+    flex: 1,
+  },
   
-  // Processing Overlay Styles
+  // Lens-Style Processing Overlay
   processingOverlay: { 
     ...StyleSheet.absoluteFillObject, 
-    backgroundColor: colors.surface, 
+    backgroundColor: 'rgba(0, 0, 0, 0.92)', 
     justifyContent: 'center', 
     alignItems: 'center', 
     paddingHorizontal: spacing.xl, 
-    zIndex: 10 
+    zIndex: 30 // Ensure it covers preview if somehow triggered simultaneously
   },
-  processingTitle: { 
-    fontSize: typography.fontSize.xl, 
-    fontWeight: typography.fontWeight.bold, 
-    color: colors.text, 
+  scannerBox: {
+    width: 240,
+    height: 300,
+    position: 'relative',
+    marginBottom: spacing['3xl'],
+  },
+  corner: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    borderColor: colors.primary,
+  },
+  topLeft: {
+    top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: radius.md,
+  },
+  topRight: {
+    top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: radius.md,
+  },
+  bottomLeft: {
+    bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: radius.md,
+  },
+  bottomRight: {
+    bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: radius.md,
+  },
+  scanLine: {
+    width: '100%',
+    height: 4,
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+    elevation: 8, 
+    borderRadius: radius.full,
+  },
+  statusContainer: {
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  stageText: { 
+    fontSize: typography.fontSize.lg, 
+    fontWeight: typography.fontWeight.semibold, 
+    color: colors.white, 
     marginBottom: spacing.xl, 
-    textAlign: 'center' 
+    textAlign: 'center',
+    letterSpacing: 0.5,
   },
   progressBarBackground: { 
     width: '100%', 
-    height: 8, 
-    backgroundColor: colors.background, 
+    height: 6, 
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', 
     borderRadius: radius.full, 
     overflow: 'hidden' 
   },
@@ -270,34 +577,5 @@ const styles = StyleSheet.create({
     height: '100%', 
     backgroundColor: colors.primary, 
     borderRadius: radius.full 
-  },
-  stepsContainer: {
-    width: '100%',
-    marginTop: spacing['3xl'],
-    paddingHorizontal: spacing.md,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  stepCheckCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.success,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  stepCheckText: {
-    color: colors.white,
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-  },
-  stepText: {
-    fontSize: typography.fontSize.md,
-    color: colors.text,
-    fontWeight: typography.fontWeight.medium,
   },
 });
