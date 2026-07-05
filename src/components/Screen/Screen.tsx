@@ -35,22 +35,28 @@ export function Screen({
     <View style={[styles.nonScrollContent, style]}>{children}</View>
   );
 
+  // By placing KeyboardAvoidingView as the outermost wrapper, it manages the entire screen layout.
+  // This prevents SafeAreaView's bottom edge calculations from interfering with Android's adjustResize 
+  // and ensures iOS padding works natively around the safe area.
   return (
-    <SafeAreaView edges={safeAreaEdges} style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoid}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <SafeAreaView edges={safeAreaEdges} style={styles.safeArea}>
         {content}
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  keyboardAvoid: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  safeArea: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,

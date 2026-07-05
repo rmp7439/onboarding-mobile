@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable, ScrollView, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Screen, Input, Button, SectionTitle } from '../../src/components';
+import { Screen, Button, SectionTitle } from '../../src/components';
 import { colors, spacing, typography } from '../../src/theme';
+
+const OTP_LENGTH = 6;
 
 export default function OTPScreen() {
   const router = useRouter();
   const [otp, setOtp] = useState('');
+  const [error, setError] = useState('');
   const [timer, setTimer] = useState(30);
+  const [isFocused, setIsFocused] = useState(true);
+  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (timer === 0) return;
@@ -19,15 +24,31 @@ export default function OTPScreen() {
     return () => clearInterval(interval);
   }, [timer]);
 
-  const handleVerify = () => {
-    if (otp.length === 6) {
-      router.replace('/(onboarding)/home');
+  const handleOtpChange = (text: string) => {
+    const numericText = text.replace(/[^0-9]/g, '');
+    setOtp(numericText);
+    if (error) {
+      setError('');
     }
+  };
+
+  const handleVerify = () => {
+    Keyboard.dismiss();
+    
+    if (otp !== '123456') {
+      setError('Invalid OTP');
+      return;
+    }
+
+    setError('');
+    router.replace('/(onboarding)/home');
   };
 
   const handleResend = () => {
     setTimer(30);
     setOtp('');
+    setError('');
+    inputRef.current?.focus();
   };
 
   const formatTime = (seconds: number) => {
@@ -36,58 +57,89 @@ export default function OTPScreen() {
     return `${mins}:${secs}`;
   };
 
+  const handleFocus = () => {
+    inputRef.current?.focus();
+  };
+
+  const otpArray = new Array(OTP_LENGTH).fill(0);
+
   return (
-    <Screen style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
-          style={styles.backButton}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-      </View>
+    <Screen scrollable={false} style={styles.screen}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.content}>
+          <SectionTitle
+            title="Verify OTP"
+            subtitle="We've sent a 6-digit OTP to your mobile number."
+            style={styles.header}
+          />
 
-      <View style={styles.content}>
-        <SectionTitle
-          title="Verify OTP"
-          subtitle="We've sent a 6-digit OTP to your mobile number."
-          style={styles.sectionTitle}
-        />
+          <View style={styles.inputContainer}>
+            <TextInput
+              ref={inputRef}
+              value={otp}
+              onChangeText={handleOtpChange}
+              onFocus={() => { setIsFocused(true); setError(''); }}
+              onBlur={() => setIsFocused(false)}
+              keyboardType="numeric"
+              maxLength={OTP_LENGTH}
+              autoFocus={true}
+              caretHidden={true}
+              style={styles.hiddenInput}
+            />
+            
+            <Pressable style={styles.otpDisplayContainer} onPress={handleFocus}>
+              {otpArray.map((_, index) => {
+                const digit = otp[index] || '';
+                const isActive = isFocused && otp.length === index;
 
-        <Input
-          label=""
-          placeholder="000000"
-          keyboardType="numeric"
-          maxLength={6}
-          value={otp}
-          onChangeText={setOtp}
-          autoFocus={true}
-          style={styles.otpInput}
-        />
+                return (
+                  <View 
+                    key={index} 
+                    style={[
+                      styles.otpSlot, 
+                      isActive && styles.otpSlotActive,
+                      !!error && styles.otpSlotError
+                    ]}
+                  >
+                    <Text style={styles.otpDigit}>{digit}</Text>
+                  </View>
+                );
+              })}
+            </Pressable>
+            
+            {!!error && <Text style={styles.errorText}>{error}</Text>}
 
-        <View style={styles.resendContainer}>
-          <Text style={styles.resendText}>Didn't receive the code? </Text>
-          <TouchableOpacity 
-            disabled={timer > 0} 
-            onPress={handleResend}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.resendLink, timer > 0 && styles.resendLinkDisabled]}>
-              Resend OTP
-            </Text>
-          </TouchableOpacity>
+            <View style={styles.resendContainer}>
+              <Text style={styles.resendText}>Didn't receive the code? </Text>
+              <TouchableOpacity 
+                disabled={timer > 0} 
+                onPress={handleResend}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.resendLink, timer > 0 && styles.resendLinkDisabled]}>
+                  Resend OTP
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.timerContainer}>
+              <Text style={styles.timerText}>
+                Countdown: {formatTime(timer)}
+              </Text>
+            </View>
+          </View>
         </View>
-
-        <Text style={styles.timerText}>
-          Countdown: {formatTime(timer)}
-        </Text>
-      </View>
+      </ScrollView>
 
       <View style={styles.footer}>
         <Button
           title="Verify"
-          disabled={otp.length !== 6}
+          disabled={otp.length !== OTP_LENGTH}
           onPress={handleVerify}
           style={styles.button}
         />
@@ -97,42 +149,69 @@ export default function OTPScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    justifyContent: 'space-between',
   },
-  header: {
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.xl,
-    alignItems: 'flex-start',
+  scrollView: {
+    flex: 1,
   },
-  backButton: {
-    paddingVertical: spacing.xs,
-    paddingRight: spacing.lg,
-  },
-  backText: {
-    color: colors.primary,
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
+  scrollContent: {
+    flexGrow: 1,
+    paddingTop: spacing['2xl'],
   },
   content: {
     flex: 1,
   },
-  sectionTitle: {
+  header: {
     marginBottom: spacing['2xl'],
   },
-  otpInput: {
-    textAlign: 'center',
-    fontSize: typography.fontSize['3xl'],
+  inputContainer: {
+    width: '100%',
+  },
+  hiddenInput: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    opacity: 0,
+    zIndex: 10,
+  },
+  otpDisplayContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  otpSlot: {
+    flex: 1,
+    height: 56,
+    borderBottomWidth: 2,
+    borderColor: colors.border,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: spacing.xs,
+    marginHorizontal: 4,
+  },
+  otpSlotActive: {
+    borderColor: colors.primary,
+  },
+  otpSlotError: {
+    borderColor: colors.error,
+  },
+  otpDigit: {
+    fontSize: 28,
     fontWeight: typography.fontWeight.bold,
-    letterSpacing: 8,
-    height: 80,
+    color: colors.text,
+    marginBottom: 2,
+  },
+  errorText: {
+    color: colors.error,
+    fontSize: typography.fontSize.sm,
+    marginTop: spacing.sm,
+    fontWeight: typography.fontWeight.medium,
   },
   resendContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.xl,
+    marginTop: spacing['2xl'],
   },
   resendText: {
     color: colors.textSecondary,
@@ -146,15 +225,22 @@ const styles = StyleSheet.create({
   resendLinkDisabled: {
     color: colors.border,
   },
+  timerContainer: {
+    marginTop: spacing.sm,
+    gap: spacing.lg,
+  },
   timerText: {
-    textAlign: 'center',
-    marginTop: spacing.md,
     color: colors.textSecondary,
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
   },
+  demoHint: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+  },
   footer: {
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: 24,
   },
   button: {
     width: '100%',
