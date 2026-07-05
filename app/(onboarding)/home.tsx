@@ -3,157 +3,110 @@ import {
   View, 
   Text, 
   StyleSheet, 
+  ScrollView, 
   Pressable, 
-  Animated, 
-  LayoutAnimation, 
-  Platform, 
-  UIManager 
+  Animated 
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen, Card, SectionTitle } from '../../src/components';
-import { colors, spacing, typography, radius } from '../../src/theme';
-
-// Enable LayoutAnimation for Android
-if (
-  Platform.OS === 'android' &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+import { colors, spacing, typography } from '../../src/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [isExpanded, setIsExpanded] = useState(false);
-  const animationController = useRef(new Animated.Value(0)).current;
+  const [isOperationsExpanded, setIsOperationsExpanded] = useState(true);
+  const animation = useRef(new Animated.Value(1)).current;
 
-  const toggleAccordion = () => {
-    // Smooth layout expansion/collapse natively pushes content down
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    const nextState = !isExpanded;
-    setIsExpanded(nextState);
-
-    // Rotate chevron and fade content
-    Animated.timing(animationController, {
-      toValue: nextState ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
+  const toggleOperations = () => {
+    const toValue = isOperationsExpanded ? 0 : 1;
+    setIsOperationsExpanded(!isOperationsExpanded);
+    Animated.timing(animation, {
+      toValue,
+      duration: 250,
+      useNativeDriver: false, // Height animation cannot use native driver
     }).start();
   };
 
-  const chevronRotateInterpolate = animationController.interpolate({
+  // Two menu items, each 64px high -> 128px total height
+  const contentHeight = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 128], 
+  });
+
+  const iconRotation = animation.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '180deg'],
   });
 
-  const contentOpacity = animationController.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
+  const handleRegisterNewEmployee = () => {
+    router.push('/(onboarding)/new-guard/aadhaar-upload');
+  };
 
-  interface MenuItemProps {
-    icon: string;
-    label: string;
-    onPress: () => void;
-    isDestructive?: boolean;
-  }
-
-  const MenuItem = ({ icon, label, onPress, isDestructive }: MenuItemProps) => (
-    <Pressable
-      style={({ pressed }) => [
-        styles.menuItem,
-        pressed && styles.menuItemPressed,
-      ]}
-      onPress={onPress}
-      android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
-    >
-      <Text style={styles.menuItemIcon}>{icon}</Text>
-      <Text style={[styles.menuItemLabel, isDestructive && styles.destructiveText]}>
-        {label}
-      </Text>
-    </Pressable>
-  );
+  const handleLogout = () => {
+    // Navigate back to the login screen for the demo
+    router.replace('/login');
+  };
 
   return (
     <Screen style={styles.container}>
-      {/* Welcome Header */}
-      <View style={styles.header}>
-        <Text style={styles.greetingText}>Welcome Back</Text>
-      </View>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <SectionTitle 
+          title="Dashboard" 
+          subtitle="Overview and Operations"
+          style={styles.header}
+        />
 
-      {/* Operations Accordion */}
-      <Card style={styles.accordionCard}>
-        <Pressable 
-          style={styles.accordionHeader} 
-          onPress={toggleAccordion}
-          android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
-        >
-          <Text style={styles.accordionTitle}>Operations</Text>
-          <Animated.View style={{ transform: [{ rotate: chevronRotateInterpolate }] }}>
-            <Text style={styles.accordionChevron}>▼</Text>
-          </Animated.View>
-        </Pressable>
-
-        {isExpanded && (
-          <Animated.View style={[styles.accordionContent, { opacity: contentOpacity }]}>
-            <View style={styles.divider} />
-            <MenuItem 
-              icon="📝" 
-              label="Register New Employee" 
-              onPress={() => router.push('/(onboarding)/new-guard/aadhaar-upload')} 
-            />
-            <MenuItem 
-              icon="👥" 
-              label="View Employees" 
-              onPress={() => console.log('View Employees tapped')} 
-            />
-            <MenuItem 
-              icon="⏳" 
-              label="Pending Verification" 
-              onPress={() => console.log('Pending Verification tapped')} 
-            />
-            <MenuItem 
-              icon="👤" 
-              label="Profile" 
-              onPress={() => router.push('/(onboarding)/profile')} 
-            />
-            <MenuItem 
-              icon="🚪" 
-              label="Logout" 
-              onPress={() => console.log('Logout tapped')} 
-              isDestructive
-            />
-          </Animated.View>
-        )}
-      </Card>
-
-      {/* Statistics */}
-      <SectionTitle title="Overview" style={styles.sectionHeader} />
-      <View style={styles.statsContainer}>
-        <View style={styles.statsRow}>
+        {/* Statistics Cards */}
+        <View style={styles.statsContainer}>
           <Card style={styles.statCard}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>12</Text>
-            <Text style={styles.statLabel}>Today's</Text>
-            <Text style={styles.statLabel}>Registrations</Text>
+            <Text style={styles.statValue}>24</Text>
+            <Text style={styles.statLabel}>Total Employees</Text>
           </Card>
-          <Card style={styles.statCard}>
-            <Text style={[styles.statValue, { color: colors.warning }]}>3</Text>
-            <Text style={styles.statLabel}>Pending</Text>
-            <Text style={styles.statLabel}>Verification</Text>
+          <Card style={[styles.statCard, styles.statCardSecondary]}>
+            <Text style={[styles.statValue, styles.statValueSecondary]}>3</Text>
+            <Text style={styles.statLabelSecondary}>Pending Verification</Text>
           </Card>
         </View>
-        <View style={styles.statsRow}>
-          <Card style={styles.statCard}>
-            <Text style={[styles.statValue, { color: colors.success }]}>8</Text>
-            <Text style={styles.statLabel}>Completed</Text>
-            <Text style={styles.statLabel}>Today</Text>
-          </Card>
-          <Card style={styles.statCard}>
-            <Text style={[styles.statValue, { color: colors.error }]}>1</Text>
-            <Text style={styles.statLabel}>Rejected</Text>
-            <Text style={styles.statLabel}>Applications</Text>
-          </Card>
-        </View>
-      </View>
+
+        {/* Operations Accordion */}
+        <Card style={styles.accordionCard}>
+          <Pressable 
+            style={styles.accordionHeader} 
+            onPress={toggleOperations}
+          >
+            <Text style={styles.accordionTitle}>Operations</Text>
+            <Animated.View style={{ transform: [{ rotate: iconRotation }] }}>
+              <Text style={styles.accordionIcon}>▼</Text>
+            </Animated.View>
+          </Pressable>
+
+          <Animated.View style={[styles.accordionContent, { height: contentHeight, opacity: animation }]}>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.menuItem,
+                pressed && styles.menuItemPressed
+              ]}
+              onPress={handleRegisterNewEmployee}
+            >
+              <Text style={styles.menuItemIcon}>📝</Text>
+              <Text style={styles.menuItemText}>Register New Employee</Text>
+            </Pressable>
+
+            <Pressable 
+              style={({ pressed }) => [
+                styles.menuItem,
+                pressed && styles.menuItemPressed
+              ]}
+              onPress={handleLogout}
+            >
+              <Text style={styles.menuItemIcon}>🚪</Text>
+              <Text style={[styles.menuItemText, styles.logoutText]}>Logout</Text>
+            </Pressable>
+          </Animated.View>
+        </Card>
+      </ScrollView>
     </Screen>
   );
 }
@@ -162,107 +115,111 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl, // Reduced whitespace
+  },
   header: {
-    marginBottom: spacing.xl,
-    marginTop: spacing.md,
+    marginBottom: spacing.lg, // Reduced whitespace
   },
-  greetingText: {
-    fontSize: typography.fontSize.lg,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+  
+  // Statistics Styles
+  statsContainer: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.lg, // Reduced whitespace
   },
-  roleText: {
+  statCard: {
+    flex: 1,
+    padding: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: colors.text,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  statCardSecondary: {
+    borderColor: '#E8F8EE',
+    backgroundColor: '#F0FDF4',
+  },
+  statValue: {
     fontSize: typography.fontSize['3xl'],
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
+    marginBottom: spacing.xs,
   },
-  
+  statValueSecondary: {
+    color: colors.success,
+  },
+  statLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
+    textAlign: 'center',
+  },
+  statLabelSecondary: {
+    fontSize: typography.fontSize.sm,
+    color: colors.success,
+    fontWeight: typography.fontWeight.medium,
+    textAlign: 'center',
+  },
+
   // Accordion Styles
   accordionCard: {
-    padding: 0, 
-    marginBottom: spacing['2xl'], // 24dp spacing before Overview
+    padding: 0,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   accordionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    padding: spacing.lg,
     backgroundColor: colors.surface,
-    minHeight: 56, // Accessible touch target
   },
   accordionTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
   },
-  accordionChevron: {
+  accordionIcon: {
     fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.bold,
   },
   accordionContent: {
-    backgroundColor: colors.surface,
-  },
-  divider: {
-    height: 1,
+    overflow: 'hidden',
     backgroundColor: colors.background,
-    marginHorizontal: spacing.lg,
   },
+  
+  // Menu Item Styles
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    minHeight: 56, // 56dp touch target for enterprise apps
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    height: 64, // Fixed height to match Animated interpolation
   },
   menuItemPressed: {
-    backgroundColor: colors.background,
+    backgroundColor: 'rgba(0,0,0,0.02)',
   },
   menuItemIcon: {
     fontSize: typography.fontSize.lg,
     marginRight: spacing.md,
-    width: 24,
-    textAlign: 'center',
   },
-  menuItemLabel: {
-    flex: 1,
+  menuItemText: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.text,
   },
-  destructiveText: {
-    color: colors.error,
-  },
-
-  // Overview Section
-  sectionHeader: {
-    marginBottom: spacing.md,
-  },
-  statsContainer: {
-    flex: 1,
-    gap: spacing.md,
-    marginBottom: spacing.md,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  statCard: {
-    flex: 1,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    alignItems: 'flex-start',
-  },
-  statValue: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.bold,
-    marginBottom: spacing.xs,
-  },
-  statLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+  logoutText: {
+    color: colors.error, // Styled as a destructive action
   },
 });
