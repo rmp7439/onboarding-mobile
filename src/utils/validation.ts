@@ -15,10 +15,3 @@ export const validatePinCode = (pinCode: string): boolean => {
   const cleaned = pinCode.replace(/\D/g, '');
   return cleaned.length === 6;
 };
-
-export const validateAadhaar = (aadhaar: string): boolean => {
-  if (!aadhaar) return false;
-  if (aadhaar.includes('Redacted')) return true; // Allow demo redacted data
-  const cleaned = aadhaar.replace(/\D/g, '');
-  return cleaned.length === 12;
-};

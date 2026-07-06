@@ -1,24 +1,19 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { AadhaarData } from '../types/Aadhaar';
 
-// 1. Logical Grouping Interfaces
 export interface MediaData {
-  aadhaarFrontUri?: string | null;
-  aadhaarBackUri?: string | null;
   selfieUri?: string | null;
   uploadedDocuments?: string[];
 }
 
-export interface OCRMetaData {
-  ocrConfidence?: number;
-  ocrRawText?: string;
-  editedFields?: string[];
+export interface OnboardingData extends MediaData {
+  fullName?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pinCode?: string;
 }
-
-// 2. Flat Data Model 
-// Combines the logical groups into a single flat interface to preserve backward compatibility
-// so that existing screens can continue using `data.fullName`, `updateData({ fullName: '...' })`, etc.
-export interface OnboardingData extends Partial<AadhaarData>, MediaData, OCRMetaData {}
 
 interface OnboardingContextType {
   data: OnboardingData;
@@ -27,26 +22,15 @@ interface OnboardingContextType {
 }
 
 const INITIAL_DATA: OnboardingData = {
-  // Personal & Document Info (from AadhaarData)
   fullName: '',
   dateOfBirth: '',
   gender: '',
-  aadhaarNumber: '',
   address: '',
   city: '',
   state: '',
   pinCode: '',
-
-  // Media Attachments (from MediaData)
-  aadhaarFrontUri: null,
-  aadhaarBackUri: null,
   selfieUri: null,
   uploadedDocuments: [],
-
-  // Processing Meta (from OCRMetaData)
-  ocrConfidence: 0,
-  ocrRawText: '',
-  editedFields: [],
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
