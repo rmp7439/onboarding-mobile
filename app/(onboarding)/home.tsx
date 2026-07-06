@@ -38,7 +38,8 @@ export default function HomeScreen() {
   });
 
   const handleRegisterNewEmployee = () => {
-    router.push('/(onboarding)/new-guard/aadhaar-upload');
+    // TODO: Navigate to new manual entry flow once implemented in V2
+    console.log("Navigate to Manual Onboarding Entry");
   };
 
   const handleLogout = () => {

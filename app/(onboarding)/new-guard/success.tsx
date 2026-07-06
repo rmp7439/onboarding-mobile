@@ -9,9 +9,12 @@ export default function SuccessScreen() {
   const router = useRouter();
   const { resetData } = useOnboarding();
 
+  // Inside app/(onboarding)/new-guard/success.tsx
+
   const handleRegisterAnother = () => {
     resetData();
-    router.replace("/(onboarding)/new-guard");
+    // TODO: Route to initial step of manual entry in V2
+    router.replace("/(onboarding)/home"); 
   };
 
   const handleGoToDashboard = () => {
