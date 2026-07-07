@@ -44,7 +44,6 @@ export interface OnboardingData {
   };
   emergencyContacts: [EmergencyContact, EmergencyContact];
   
-  // Kept at root level to avoid breaking existing CapturePhoto and Documents screens
   selfieUri: string | null;
   uploadedDocuments: string[];
 }
