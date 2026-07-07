@@ -6,7 +6,14 @@ export const isValidNameInput = (value: string): boolean => {
   return /^[A-Za-z ]*$/.test(value);
 };
 
-// ... keep other existing filters if used elsewhere ...
+/**
+ * Evaluates if the input contains ONLY letters, numbers, spaces, commas, full stops, and hyphens.
+ * Prevents invalid symbols like @, #, $, etc.
+ */
+export const isValidAddressInput = (value: string): boolean => {
+  return /^[a-zA-Z0-9\s,.-]*$/.test(value);
+};
+
 export const allowOnlyNumbers = (value: string): string => {
   return value.replace(/\D/g, '');
 };
