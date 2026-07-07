@@ -19,13 +19,13 @@ export function FormSection({ title, children }: FormSectionProps) {
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   cardHeader: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     paddingBottom: spacing.xs,
