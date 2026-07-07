@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export interface EmergencyContact {
   name: string;
@@ -41,8 +41,8 @@ export interface OnboardingData {
     branch: string;
     micr: string;
   };
-  emergencyContact: [EmergencyContact];
-  
+  emergencyContact: EmergencyContact;
+
   selfieUri: string | null;
   uploadedDocuments: string[];
 }
@@ -54,19 +54,29 @@ interface OnboardingContextType {
 }
 
 const INITIAL_DATA: OnboardingData = {
-  employment: { joiningDate: '', unit: '' },
-  personal: { firstName: '', surname: '', fatherName: '', husbandName: '', gender: '', dob: '', mobile: '', bloodGroup: '' },
-  identity: { aadhaar: '', pan: '', uan: '', esic: ''},
-  address: { permanent: '', current: '', city: '', state: '', pinCode: '' },
-  bank: { bankName: '', accountNumber: '', ifsc: '', branch: '', micr: '' },
-  emergencyContact: [
-    { name: '', relation: '', mobile: '' },
-  ],
+  employment: { joiningDate: "", unit: "" },
+  personal: {
+    firstName: "",
+    surname: "",
+    fatherName: "",
+    husbandName: "",
+    gender: "",
+    dob: "",
+    mobile: "",
+    bloodGroup: "",
+  },
+  identity: { aadhaar: "", pan: "", uan: "", esic: "" },
+  address: { permanent: "", current: "", city: "", state: "", pinCode: "" },
+  bank: { bankName: "", accountNumber: "", ifsc: "", branch: "", micr: "" },
+  emergencyContact: { name: "", relation: "", mobile: "" },
+
   selfieUri: null,
   uploadedDocuments: [],
 };
 
-const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
+const OnboardingContext = createContext<OnboardingContextType | undefined>(
+  undefined,
+);
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
@@ -89,7 +99,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 export function useOnboarding() {
   const context = useContext(OnboardingContext);
   if (context === undefined) {
-    throw new Error('useOnboarding must be used within an OnboardingProvider');
+    throw new Error("useOnboarding must be used within an OnboardingProvider");
   }
   return context;
 }

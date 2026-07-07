@@ -17,8 +17,15 @@ import { DocumentItem } from "../../../src/types/Document";
 import { useImagePickerAction } from "../../../src/hooks/useImagePickerAction";
 
 const INITIAL_DOCUMENTS: DocumentItem[] = [
-  { id: "pan", title: "PAN Card", uri: null, filename: null },
-  { id: "driving", title: "Driving Licence", uri: null, filename: null },
+  // Required Documents
+  { id: "aadhaar", title: "Aadhaar Card", uri: null, filename: null, required: true },
+  { id: "pan", title: "PAN Card", uri: null, filename: null, required: true },
+  { id: "driving", title: "Driving Licence", uri: null, filename: null, required: true },
+  { id: "bank", title: "Bank Passbook / Cancelled Cheque", uri: null, filename: null, required: true },
+  { id: "education", title: "Education Proof", uri: null, filename: null, required: true },
+  { id: "voter", title: "Voter ID Card", uri: null, filename: null, required: true },
+  // Optional Documents
+  { id: "discharge", title: "Discharge Book (If Applicable)", uri: null, filename: null, required: false },
 ];
 
 export default function DocumentsScreen() {
@@ -81,6 +88,100 @@ export default function DocumentsScreen() {
     // router.push('/(onboarding)/new-guard/review-manual');
   };
 
+  // Derive document sets and progress
+  const requiredDocs = documents.filter((doc) => doc.required);
+  const optionalDocs = documents.filter((doc) => !doc.required);
+  
+  const totalRequiredDocs = requiredDocs.length;
+  const uploadedRequiredDocs = requiredDocs.filter((doc) => doc.uri !== null).length;
+  
+  const isContinueEnabled = uploadedRequiredDocs === totalRequiredDocs;
+
+  // Reusable render function to prevent duplicating the card logic
+  const renderDocumentRow = (doc: DocumentItem, index: number, total: number) => {
+    const isLast = index === total - 1;
+    return (
+      <View
+        key={doc.id}
+        style={[styles.rowContainer, !isLast && styles.rowBorder]}
+      >
+        <View style={styles.rowHeader}>
+          <Text style={styles.docTitle}>{doc.title}</Text>
+          {doc.uri ? (
+            <View style={styles.uploadedBadge}>
+              <Text style={styles.uploadedBadgeText}>✓ Attached</Text>
+            </View>
+          ) : (
+            <Text
+              style={[
+                styles.optionalText,
+                doc.required && styles.requiredText,
+              ]}
+            >
+              {doc.required ? "Required" : "Optional"}
+            </Text>
+          )}
+        </View>
+
+        {!doc.uri ? (
+          <View style={styles.actionContainer}>
+            <Button
+              title="Upload"
+              variant="outline"
+              onPress={() =>
+                openPicker(
+                  () => handlePickImage(doc.id, "camera"),
+                  () => handlePickImage(doc.id, "gallery"),
+                )
+              }
+              style={styles.actionButton}
+            />
+          </View>
+        ) : (
+          <View style={styles.attachmentContainer}>
+            <View style={styles.fileInfoRow}>
+              <Image
+                source={{ uri: doc.uri }}
+                style={styles.thumbnail}
+                resizeMode="cover"
+              />
+              <View style={styles.fileDetails}>
+                <Text
+                  style={styles.filenameText}
+                  numberOfLines={1}
+                  ellipsizeMode="middle"
+                >
+                  {doc.filename}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.cardActionRow}>
+              <Button
+                title="Replace"
+                variant="outline"
+                onPress={() =>
+                  openPicker(
+                    () => handlePickImage(doc.id, "camera"),
+                    () => handlePickImage(doc.id, "gallery"),
+                  )
+                }
+                style={styles.halfBtn}
+              />
+              <View style={styles.actionSpacer} />
+              <Button
+                title="Remove"
+                variant="outline"
+                onPress={() => handleRemove(doc.id)}
+                style={styles.halfBtn}
+              />
+            </View>
+          </View>
+        )}
+      </View>
+    );
+  };
+
   return (
     <Screen scrollable={false} style={styles.container}>
       <ScrollView
@@ -88,92 +189,45 @@ export default function DocumentsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <SectionTitle title="Supporting Documents" style={styles.header} />
+        <SectionTitle 
+          title="Supporting Documents" 
+          subtitle="Upload all required documents before continuing."
+          style={styles.header} 
+        />
 
+        {/* REQUIRED DOCUMENTS SECTION */}
+        <SectionTitle 
+          title="Required Documents" 
+          subtitle={`${uploadedRequiredDocs} / ${totalRequiredDocs} Uploaded`}
+          style={styles.sectionHeader} 
+        />
         <Card style={styles.listCard}>
-          {documents.map((doc, index) => {
-            const isLast = index === documents.length - 1;
-            return (
-              <View
-                key={doc.id}
-                style={[styles.rowContainer, !isLast && styles.rowBorder]}
-              >
-                <View style={styles.rowHeader}>
-                  <Text style={styles.docTitle}>{doc.title}</Text>
-                  {doc.uri ? (
-                    <View style={styles.uploadedBadge}>
-                      <Text style={styles.uploadedBadgeText}>✓ Attached</Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.optionalText}>Optional</Text>
-                  )}
-                </View>
-
-                {!doc.uri ? (
-                  <View style={styles.actionContainer}>
-                    <Button
-                      title="Upload"
-                      variant="outline"
-                      onPress={() =>
-                        openPicker(
-                          () => handlePickImage(doc.id, "camera"),
-                          () => handlePickImage(doc.id, "gallery"),
-                        )
-                      }
-                      style={styles.actionButton}
-                    />
-                  </View>
-                ) : (
-                  <View style={styles.attachmentContainer}>
-                    <View style={styles.fileInfoRow}>
-                      <Image
-                        source={{ uri: doc.uri }}
-                        style={styles.thumbnail}
-                        resizeMode="cover"
-                      />
-                      <View style={styles.fileDetails}>
-                        <Text
-                          style={styles.filenameText}
-                          numberOfLines={1}
-                          ellipsizeMode="middle"
-                        >
-                          {doc.filename}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.cardActionRow}>
-                      <Button
-                        title="Replace"
-                        variant="outline"
-                        onPress={() =>
-                          openPicker(
-                            () => handlePickImage(doc.id, "camera"),
-                            () => handlePickImage(doc.id, "gallery"),
-                          )
-                        }
-                        style={styles.halfBtn}
-                      />
-                      <View style={styles.actionSpacer} />
-                      <Button
-                        title="Remove"
-                        variant="outline"
-                        onPress={() => handleRemove(doc.id)}
-                        style={styles.halfBtn}
-                      />
-                    </View>
-                  </View>
-                )}
-              </View>
-            );
-          })}
+          {requiredDocs.map((doc, index) => 
+            renderDocumentRow(doc, index, requiredDocs.length)
+          )}
         </Card>
+
+        {/* OPTIONAL DOCUMENTS SECTION */}
+        {optionalDocs.length > 0 && (
+          <>
+            <SectionTitle 
+              title="Optional Documents" 
+              style={[styles.sectionHeader, styles.marginTop]} 
+            />
+            <Card style={styles.listCard}>
+              {optionalDocs.map((doc, index) => 
+                renderDocumentRow(doc, index, optionalDocs.length)
+              )}
+            </Card>
+          </>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
         <Button
           title="Continue"
           onPress={handleContinue}
+          disabled={!isContinueEnabled}
           style={styles.fullButton}
         />
       </View>
@@ -191,7 +245,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing["2xl"],
   },
-  header: { marginBottom: spacing.lg },
+  header: { marginBottom: spacing.md },
+  sectionHeader: { marginBottom: spacing.sm },
+  marginTop: { marginTop: spacing.xl },
   listCard: {
     padding: 0,
     borderWidth: 1,
@@ -220,6 +276,9 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
     fontWeight: typography.fontWeight.medium,
+  },
+  requiredText: {
+    color: colors.error,
   },
   uploadedBadge: {
     backgroundColor: "#F0FDF4",

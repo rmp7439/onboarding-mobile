@@ -28,7 +28,7 @@ export interface EmployeeFormData {
   ifscCode: string;
   branch: string;
   micrCode: string;
-  // Emergency Contact 1
+  // Emergency Contact 
   em1Name: string;
   em1Relation: string;
   em1Mobile: string;

@@ -72,7 +72,7 @@ export default function EmployeeDetailsScreen() {
           data.state.length > 0 &&
           data.pinCode.length === 6 &&
           data.bankName.length > 0 &&
-          data.accountNumber.length === 16 && // Updated to strictly demand 16 digits
+          data.accountNumber.length === 16 &&
           data.ifscCode.length === 11 &&
           data.branch.length > 0 &&
           data.micrCode.length === 9
@@ -156,13 +156,11 @@ export default function EmployeeDetailsScreen() {
         branch: formData.branch,
         micr: formData.micrCode,
       },
-      emergencyContact: [
-        {
-          name: formData.em1Name,
-          relation: formData.em1Relation,
-          mobile: formData.em1Mobile,
-        },
-      ],
+      emergencyContact: {
+        name: formData.em1Name,
+        relation: formData.em1Relation,
+        mobile: formData.em1Mobile,
+      },
     });
     router.push("/(onboarding)/new-guard/capture-photo");
   };
@@ -176,7 +174,7 @@ export default function EmployeeDetailsScreen() {
       >
         <SectionTitle
           title="Employee Registration"
-          subtitle={`Step ${currentStep} of ${TOTAL_STEPS}\n${STEP_TITLES[currentStep - 1]}`}
+          subtitle={`Step ${currentStep} of ${TOTAL_STEPS}`}
           style={styles.mainHeader}
         />
 

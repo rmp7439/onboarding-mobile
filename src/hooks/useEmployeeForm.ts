@@ -20,7 +20,6 @@ export function useEmployeeForm() {
     panNumber: data.identity.pan,
     uanNumber: data.identity.uan,
     esicNumber: data.identity.esic,
-    pfNumber: data.identity.pf,
     permanentAddress: data.address.permanent,
     currentAddress: data.address.current,
     city: data.address.city,
@@ -31,12 +30,9 @@ export function useEmployeeForm() {
     ifscCode: data.bank.ifsc,
     branch: data.bank.branch,
     micrCode: data.bank.micr,
-    em1Name: data.emergencyContacts[0].name,
-    em1Relation: data.emergencyContacts[0].relation,
-    em1Mobile: data.emergencyContacts[0].mobile,
-    em2Name: data.emergencyContacts[1].name,
-    em2Relation: data.emergencyContacts[1].relation,
-    em2Mobile: data.emergencyContacts[1].mobile,
+    em1Name: data.emergencyContact.name,
+    em1Relation: data.emergencyContact.relation,
+    em1Mobile: data.emergencyContact.mobile,
   }));
 
   const updateField = useCallback((field: keyof EmployeeFormData, value: string) => {

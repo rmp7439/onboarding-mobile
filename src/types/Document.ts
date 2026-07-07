@@ -3,4 +3,5 @@ export interface DocumentItem {
   title: string;
   uri: string | null;
   filename: string | null;
+  required?: boolean;
 }
