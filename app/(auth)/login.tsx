@@ -25,7 +25,6 @@ export default function LoginScreen() {
       <View style={styles.content}>
         <SectionTitle
           title="Sign In"
-          subtitle="Enter your mobile number to continue"
           style={styles.header}
         />
         <Card style={styles.card}>

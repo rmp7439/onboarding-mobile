@@ -25,7 +25,6 @@ export default function OTPScreen() {
       <View style={styles.content}>
         <SectionTitle
           title="Verify OTP"
-          subtitle="Enter the code sent to your mobile device"
           style={styles.header}
         />
         <Card style={styles.card}>
