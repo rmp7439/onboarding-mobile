@@ -36,25 +36,23 @@ export const IdentityStep = memo(function IdentityStep({ formData, updateField }
           ]}
         />
         
-        <Input 
-          label="UAN Number" 
-          value={formData.uanNumber} 
-          onChangeText={(text) => updateField('uanNumber', allowOnlyNumbers(text))} 
-          keyboardType="numeric" 
-          maxLength={12} 
+        <SegmentedInput
+          label="UAN Number"
+          value={formData.uanNumber}
+          onChange={(val) => updateField('uanNumber', val)}
+          segments={[
+            { length: 4, type: 'numeric' },
+            { length: 4, type: 'numeric' },
+            { length: 4, type: 'numeric' },
+          ]}
         />
+        
         <Input 
           label="ESIC Number" 
           value={formData.esicNumber} 
           onChangeText={(text) => updateField('esicNumber', allowOnlyNumbers(text))} 
           keyboardType="numeric" 
           maxLength={17} 
-        />
-        <Input 
-          label="PF Number (Optional)" 
-          value={formData.pfNumber} 
-          onChangeText={(text) => updateField('pfNumber', text)} 
-          autoCapitalize="characters" 
         />
       </FormSection>
     </View>
