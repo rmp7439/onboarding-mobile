@@ -19,7 +19,6 @@ export function IdentityStep({ formData, updateField }: StepProps) {
           value={formData.aadhaarNumber}
           onChangeText={(text) => updateField('aadhaarNumber', text)}
           maxLength={15}
-          required
         />
         
         <SegmentedInput

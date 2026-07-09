@@ -15,10 +15,10 @@ const INITIAL_DOCUMENTS: DocumentItem[] = [
   { id: "aadhaar", title: "Aadhaar Card", uri: null, filename: null, required: true },
   { id: "pan", title: "PAN Card", uri: null, filename: null, required: false },
   { id: "driving", title: "Driving Licence", uri: null, filename: null, required: false },
-  { id: "bank", title: "Bank Passbook / Cancelled Cheque", uri: null, filename: null, required: false },
+  { id: "bank", title: "Bank Passbook", uri: null, filename: null, required: false },
   { id: "education", title: "Education Proof", uri: null, filename: null, required: false },
   { id: "voter", title: "Voter ID Card", uri: null, filename: null, required: false },
-  { id: "discharge", title: "Discharge Book (If Applicable)", uri: null, filename: null, required: false },
+  { id: "discharge", title: "Discharge Book", uri: null, filename: null, required: false },
 ];
 
 export default function DocumentsScreen() {

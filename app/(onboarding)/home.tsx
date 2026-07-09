@@ -22,11 +22,10 @@ export default function HomeScreen() {
     Animated.timing(animation, {
       toValue,
       duration: 250,
-      useNativeDriver: false, // Height animation cannot use native driver
+      useNativeDriver: false,
     }).start();
   };
 
-  // Two menu items, each 64px high -> 128px total height
   const contentHeight = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 128], 
@@ -38,12 +37,10 @@ export default function HomeScreen() {
   });
 
   const handleRegisterNewEmployee = () => {
-    // Bypasses the old OCR routes entirely
     router.push('../(onboarding)/new-guard/employee-details');
   };
 
   const handleLogout = () => {
-    // Navigate back to the login screen for the demo
     router.replace('/login');
   };
 
@@ -55,21 +52,8 @@ export default function HomeScreen() {
       >
         <SectionTitle 
           title="Dashboard" 
-          subtitle="Overview and Operations"
           style={styles.header}
         />
-
-        {/* Statistics Cards */}
-        <View style={styles.statsContainer}>
-          <Card style={styles.statCard}>
-            <Text style={styles.statValue}>24</Text>
-            <Text style={styles.statLabel}>Total Employees</Text>
-          </Card>
-          <Card style={[styles.statCard, styles.statCardSecondary]}>
-            <Text style={[styles.statValue, styles.statValueSecondary]}>3</Text>
-            <Text style={styles.statLabelSecondary}>Pending Verification</Text>
-          </Card>
-        </View>
 
         {/* Operations Accordion */}
         <Card style={styles.accordionCard}>

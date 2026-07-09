@@ -30,9 +30,6 @@ export default function SuccessScreen() {
         </View>
 
         <Text style={styles.title}>Employee Registered Successfully</Text>
-        <Text style={styles.subtitle}>
-          The employee has been successfully added to the onboarding system.
-        </Text>
 
         <Card style={styles.detailsCard}>
           <View style={styles.detailRow}>
