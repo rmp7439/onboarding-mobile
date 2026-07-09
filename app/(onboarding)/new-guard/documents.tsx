@@ -1,71 +1,24 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  Alert,
-  ScrollView,
-  Platform,
-} from "react-native";
+import { View, Text, StyleSheet, Image, Alert, ScrollView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Screen, Card, SectionTitle, Button } from "../../../src/components";
-import { colors, spacing, typography, radius } from "../../../src/theme";
-import { useOnboarding } from "../../../src/context/OnboardingContext";
-import { DocumentItem } from "../../../src/types/Document";
 import { useImagePickerAction } from "../../../src/hooks/useImagePickerAction";
+import { useOnboarding } from "../../../src/context/OnboardingContext";
 import { api } from "../../../src/api/apiClient";
-import {
-  mapEmployeeData,
-  mapDocumentType,
-} from "../../../src/utils/dataMappers";
+import { mapEmployeeData, mapDocumentType } from "../../../src/utils/dataMappers";
+import { DocumentItem } from "../../../src/types/Document";
+import { colors, spacing, typography, radius } from "../../../src/theme";
 import { IMAGE_QUALITY } from "../../../src/constants/App";
 
 const INITIAL_DOCUMENTS: DocumentItem[] = [
-  {
-    id: "aadhaar",
-    title: "Aadhaar Card",
-    uri: null,
-    filename: null,
-    required: true,
-  },
-  { id: "pan", title: "PAN Card", uri: null, filename: null, required: true },
-  {
-    id: "driving",
-    title: "Driving Licence",
-    uri: null,
-    filename: null,
-    required: true,
-  },
-  {
-    id: "bank",
-    title: "Bank Passbook / Cancelled Cheque",
-    uri: null,
-    filename: null,
-    required: true,
-  },
-  {
-    id: "education",
-    title: "Education Proof",
-    uri: null,
-    filename: null,
-    required: true,
-  },
-  {
-    id: "voter",
-    title: "Voter ID Card",
-    uri: null,
-    filename: null,
-    required: true,
-  },
-  {
-    id: "discharge",
-    title: "Discharge Book (If Applicable)",
-    uri: null,
-    filename: null,
-    required: false,
-  },
+  { id: "aadhaar", title: "Aadhaar Card", uri: null, filename: null, required: true },
+  { id: "pan", title: "PAN Card", uri: null, filename: null, required: false },
+  { id: "driving", title: "Driving Licence", uri: null, filename: null, required: false },
+  { id: "bank", title: "Bank Passbook / Cancelled Cheque", uri: null, filename: null, required: false },
+  { id: "education", title: "Education Proof", uri: null, filename: null, required: false },
+  { id: "voter", title: "Voter ID Card", uri: null, filename: null, required: false },
+  { id: "discharge", title: "Discharge Book (If Applicable)", uri: null, filename: null, required: false },
 ];
 
 export default function DocumentsScreen() {
@@ -74,15 +27,11 @@ export default function DocumentsScreen() {
   const { openPicker, PickerComponent } = useImagePickerAction();
   const [documents, setDocuments] = useState<DocumentItem[]>(INITIAL_DOCUMENTS);
 
-  // Network & Progress State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progressText, setProgressText] = useState("");
   const [errorText, setErrorText] = useState<string | null>(null);
 
-  // Resiliency State (Tracks what succeeds so retries skip them)
-  const [registeredEmployeeId, setRegisteredEmployeeId] = useState<
-    string | null
-  >(null);
+  const [registeredEmployeeId, setRegisteredEmployeeId] = useState<string | null>(null);
   const [isSelfieUploaded, setIsSelfieUploaded] = useState(false);
   const [completedDocUploads, setCompletedDocUploads] = useState<string[]>([]);
 
@@ -104,33 +53,19 @@ export default function DocumentsScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const filename =
-          asset.fileName || asset.uri.split("/").pop() || "document.jpg";
-
-        setDocuments((prev) =>
-          prev.map((doc) =>
-            doc.id === id ? { ...doc, uri: asset.uri, filename } : doc,
-          ),
-        );
+        const filename = asset.fileName || asset.uri.split("/").pop() || "document.jpg";
+        setDocuments((prev) => prev.map((doc) => doc.id === id ? { ...doc, uri: asset.uri, filename } : doc));
       }
     } catch (error: any) {
-      Alert.alert(
-        "Error",
-        error.message || "Something went wrong while attaching the document.",
-      );
+      Alert.alert("Error", error.message || "Something went wrong while attaching the document.");
     }
   };
 
   const handleRemove = (id: string) => {
-    setDocuments((prev) =>
-      prev.map((doc) =>
-        doc.id === id ? { ...doc, uri: null, filename: null } : doc,
-      ),
-    );
+    setDocuments((prev) => prev.map((doc) => doc.id === id ? { ...doc, uri: null, filename: null } : doc));
   };
 
   const handleSubmit = async () => {
-    // Prevent duplicate submissions
     if (isSubmitting) return;
 
     setIsSubmitting(true);
@@ -159,9 +94,7 @@ export default function DocumentsScreen() {
 
         if (completedDocUploads.includes(doc.id)) continue;
 
-        setProgressText(
-          `Uploading ${doc.title} (${i + 1}/${docsToUpload.length})...`,
-        );
+        setProgressText(`Uploading ${doc.title} (${i + 1}/${docsToUpload.length})...`);
         const docType = mapDocumentType(doc.id);
 
         await api.uploadDocument(empId!, docType, doc.uri!);
@@ -174,10 +107,7 @@ export default function DocumentsScreen() {
 
       router.push("/(onboarding)/new-guard/success");
     } catch (error: any) {
-      setErrorText(
-        error.message ||
-          "An unexpected error occurred during the upload process.",
-      );
+      setErrorText(error.message || "An unexpected error occurred during the upload process.");
     } finally {
       setIsSubmitting(false);
       setProgressText("");
@@ -186,24 +116,14 @@ export default function DocumentsScreen() {
 
   const requiredDocs = documents.filter((doc) => doc.required);
   const optionalDocs = documents.filter((doc) => !doc.required);
+  
+  // Submit is enabled as long as all required docs (just Aadhaar) are uploaded
+  const isContinueEnabled = requiredDocs.every((doc) => doc.uri !== null);
 
-  const totalRequiredDocs = requiredDocs.length;
-  const uploadedRequiredDocs = requiredDocs.filter(
-    (doc) => doc.uri !== null,
-  ).length;
-  const isContinueEnabled = uploadedRequiredDocs === totalRequiredDocs;
-
-  const renderDocumentRow = (
-    doc: DocumentItem,
-    index: number,
-    total: number,
-  ) => {
+  const renderDocumentRow = (doc: DocumentItem, index: number, total: number) => {
     const isLast = index === total - 1;
     return (
-      <View
-        key={doc.id}
-        style={[styles.rowContainer, !isLast && styles.rowBorder]}
-      >
+      <View key={doc.id} style={[styles.rowContainer, !isLast && styles.rowBorder]}>
         <View style={styles.rowHeader}>
           <Text style={styles.docTitle}>{doc.title}</Text>
           {doc.uri ? (
@@ -211,9 +131,7 @@ export default function DocumentsScreen() {
               <Text style={styles.uploadedBadgeText}>✓ Attached</Text>
             </View>
           ) : (
-            <Text
-              style={[styles.optionalText, doc.required && styles.requiredText]}
-            >
+            <Text style={[styles.optionalText, doc.required && styles.requiredText]}>
               {doc.required ? "Required" : "Optional"}
             </Text>
           )}
@@ -225,45 +143,24 @@ export default function DocumentsScreen() {
               title="Upload"
               variant="outline"
               disabled={isSubmitting}
-              onPress={() =>
-                openPicker(
-                  () => handlePickImage(doc.id, "camera"),
-                  () => handlePickImage(doc.id, "gallery"),
-                )
-              }
+              onPress={() => openPicker(() => handlePickImage(doc.id, "camera"), () => handlePickImage(doc.id, "gallery"))}
               style={styles.actionButton}
             />
           </View>
         ) : (
           <View style={styles.attachmentContainer}>
             <View style={styles.fileInfoRow}>
-              <Image
-                source={{ uri: doc.uri }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-              />
+              <Image source={{ uri: doc.uri }} style={styles.thumbnail} resizeMode="cover" />
               <View style={styles.fileDetails}>
-                <Text
-                  style={styles.filenameText}
-                  numberOfLines={1}
-                  ellipsizeMode="middle"
-                >
-                  {doc.filename}
-                </Text>
+                <Text style={styles.filenameText} numberOfLines={1} ellipsizeMode="middle">{doc.filename}</Text>
               </View>
             </View>
-
             <View style={styles.cardActionRow}>
               <Button
                 title="Replace"
                 variant="outline"
                 disabled={isSubmitting}
-                onPress={() =>
-                  openPicker(
-                    () => handlePickImage(doc.id, "camera"),
-                    () => handlePickImage(doc.id, "gallery"),
-                  )
-                }
+                onPress={() => openPicker(() => handlePickImage(doc.id, "camera"), () => handlePickImage(doc.id, "gallery"))}
                 style={styles.halfBtn}
               />
               <View style={styles.actionSpacer} />
@@ -283,38 +180,23 @@ export default function DocumentsScreen() {
 
   return (
     <Screen scrollable={false} style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <SectionTitle
           title="Supporting Documents"
-          subtitle="Upload all required documents before continuing."
+          subtitle="Upload required documents before continuing."
           style={styles.header}
         />
 
-        <SectionTitle
-          title="Required Documents"
-          subtitle={`${uploadedRequiredDocs} / ${totalRequiredDocs} Uploaded`}
-          style={styles.sectionHeader}
-        />
+        <SectionTitle title="Required Document" style={styles.sectionHeader} />
         <Card style={styles.listCard}>
-          {requiredDocs.map((doc, index) =>
-            renderDocumentRow(doc, index, requiredDocs.length),
-          )}
+          {requiredDocs.map((doc, index) => renderDocumentRow(doc, index, requiredDocs.length))}
         </Card>
 
         {optionalDocs.length > 0 && (
           <>
-            <SectionTitle
-              title="Optional Documents"
-              style={[styles.sectionHeader, styles.marginTop]}
-            />
+            <SectionTitle title="Additional Documents" style={[styles.sectionHeader, styles.marginTop]} />
             <Card style={styles.listCard}>
-              {optionalDocs.map((doc, index) =>
-                renderDocumentRow(doc, index, optionalDocs.length),
-              )}
+              {optionalDocs.map((doc, index) => renderDocumentRow(doc, index, optionalDocs.length))}
             </Card>
           </>
         )}
@@ -322,10 +204,7 @@ export default function DocumentsScreen() {
 
       <View style={styles.footer}>
         {errorText ? <Text style={styles.errorBanner}>{errorText}</Text> : null}
-        {progressText ? (
-          <Text style={styles.progressText}>{progressText}</Text>
-        ) : null}
-
+        {progressText ? <Text style={styles.progressText}>{progressText}</Text> : null}
         <Button
           title={errorText ? "Retry Failed Uploads" : "Submit"}
           onPress={handleSubmit}
@@ -334,7 +213,6 @@ export default function DocumentsScreen() {
           style={styles.fullButton}
         />
       </View>
-
       <PickerComponent />
     </Screen>
   );

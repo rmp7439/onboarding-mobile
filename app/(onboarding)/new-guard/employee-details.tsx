@@ -52,7 +52,7 @@ export default function EmployeeDetailsScreen() {
         );
       case 2:
         return (
-          data.aadhaarNumber.length === 12 &&
+          data.aadhaarNumber.trim().length>0 &&
           data.panNumber.length === 10 &&
           data.uanNumber.length === 12 &&
           data.esicNumber.length === 17
