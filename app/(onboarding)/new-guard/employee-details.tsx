@@ -106,7 +106,7 @@ export default function EmployeeDetailsScreen() {
     } else {
       handleFinalSubmit();
     }
-  }, [currentStep, stepWidth, slideAnim]);
+  }, [currentStep, stepWidth, slideAnim, formData]); // Added formData to dependencies
 
   const handlePrevStep = useCallback(() => {
     if (currentStep > 1) {
