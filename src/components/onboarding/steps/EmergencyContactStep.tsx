@@ -20,7 +20,7 @@ export const EmergencyContactStep = memo(function EmergencyContactStep({ formDat
           value={formData.em1Name} 
           onChangeText={(text) => { 
             // Rejects numbers, symbols, and special characters instantly
-            if (isValidNameInput(text)) updateField('em1Name', text); 
+            updateField('em1Name', text); 
           }} 
         />
         <Input 
@@ -28,7 +28,7 @@ export const EmergencyContactStep = memo(function EmergencyContactStep({ formDat
           value={formData.em1Relation} 
           onChangeText={(text) => { 
             // Ensures only alphabetic characters and spaces are allowed
-            if (isValidNameInput(text)) updateField('em1Relation', text); 
+            updateField('em1Relation', text); 
           }} 
         />
         <Input 

@@ -142,6 +142,7 @@ export default function DocumentsScreen() {
       if (!empId) {
         setProgressText("Registering employee details...");
         const mappedData = mapEmployeeData(data);
+        console.log("MAPPED DATA:", mappedData);
         const result = await api.registerEmployee(mappedData);
         empId = result.id;
         setRegisteredEmployeeId(empId);
