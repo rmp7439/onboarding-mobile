@@ -185,20 +185,12 @@ export default function DocumentsScreen() {
   return (
     <Screen scrollable={false} style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <SectionTitle
-          title="Supporting Documents"
-          subtitle="Upload required documents before continuing."
-          style={styles.header}
-        />
-
-        <SectionTitle title="Required Document" style={styles.sectionHeader} />
         <Card style={styles.listCard}>
           {requiredDocs.map((doc, index) => renderDocumentRow(doc, index, requiredDocs.length))}
         </Card>
 
         {optionalDocs.length > 0 && (
           <>
-            <SectionTitle title="Additional Documents" style={[styles.sectionHeader, styles.marginTop]} />
             <Card style={styles.listCard}>
               {optionalDocs.map((doc, index) => renderDocumentRow(doc, index, optionalDocs.length))}
             </Card>
