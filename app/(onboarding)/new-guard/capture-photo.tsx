@@ -93,8 +93,8 @@ export default function CapturePhotoScreen() {
         const targetCropSize = Math.floor(squareSize / scale);
         const cropSize = Math.min(
           targetCropSize, 
-          photoWidth - cropX, 
-          photoHeight - cropY
+          photoData.width - cropX, 
+          photoData.height - cropY
         );
 
         const manipResult = await manipulateAsync(

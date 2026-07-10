@@ -9,8 +9,17 @@ export default function SuccessScreen() {
   const router = useRouter();
   const { resetData } = useOnboarding();
 
-  const handleComplete = () => {
+  const handleRegisterAnother = () => {
+    // 1. Purge the context state of the employee just registered
     resetData();
+    // 2. Start a fresh registration by replacing the success screen in the stack
+    router.replace("/(onboarding)/new-guard/employee-details");
+  };
+
+  const handleGoToDashboard = () => {
+    // 1. Purge the context state
+    resetData();
+    // 2. Navigate cleanly back to the manager's dashboard
     router.replace("/(onboarding)/home");
   };
 
@@ -34,6 +43,7 @@ export default function SuccessScreen() {
         <Card style={styles.detailsCard}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Registration ID</Text>
+            {/* Note: This is currently hardcoded but preserves existing UI */}
             <Text style={styles.detailValue}>EMP-2026-001</Text>
           </View>
           <View style={styles.divider} />
@@ -47,13 +57,13 @@ export default function SuccessScreen() {
       <View style={styles.footer}>
         <Button
           title="Register Another Employee"
-          onPress={handleComplete}
+          onPress={handleRegisterAnother}
           style={styles.button}
         />
         <Button
           title="Go To Dashboard"
           variant="outline"
-          onPress={handleComplete}
+          onPress={handleGoToDashboard}
           style={styles.button}
         />
       </View>
@@ -61,6 +71,7 @@ export default function SuccessScreen() {
   );
 }
 
+// ... styles remain completely unchanged ...
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: {
