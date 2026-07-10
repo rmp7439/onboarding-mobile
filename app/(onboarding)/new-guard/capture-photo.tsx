@@ -76,7 +76,7 @@ export default function CapturePhotoScreen() {
         const cropX = Math.max(0, Math.floor((guideLeft + offsetX) / scale));
         const cropY = Math.max(0, Math.floor((guideTop + offsetY) / scale));
         const cropWidth = Math.min(photoWidth, Math.floor(280 / scale));
-        const cropHeight = Math.min(photoHeight, Math.floor(380 / scale));
+        const cropHeight = Math.min(photoHeight, Math.floor(280 / scale));
 
         const manipResult = await manipulateAsync(
           photoData.uri,
@@ -181,7 +181,7 @@ export default function CapturePhotoScreen() {
           // Extracts the exact Y-position of the face guide relative to the screen on load
           onLayout={(e) => {
             const { y, height } = e.nativeEvent.layout;
-            setGuideTop(y + (height - 380) / 2);
+            setGuideTop(y + (height - 280) / 2);
           }}
         >
           <View style={styles.faceGuide} />
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   },
   capturedPlaceholder: {
     width: "100%",
-    aspectRatio: 3 / 4,
+    aspectRatio: 1 / 1,
     backgroundColor: colors.background,
     borderRadius: radius.md,
     borderWidth: 1,
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   },
   faceGuide: {
     width: 280,
-    height: 380,
+    height: 280,
     borderRadius: 140,
     borderWidth: 2,
     borderColor: "rgba(255, 255, 255, 0.6)",
