@@ -60,8 +60,6 @@ export default function ProfilesSearchScreen() {
 
   return (
     <Screen style={styles.container} scrollable={false}>
-      <SectionTitle title="Employee Profiles" subtitle="Search to view details" style={styles.header} />
-      
       <Input
         label="Search"
         placeholder="Name, Code, Mobile, or Aadhaar"
