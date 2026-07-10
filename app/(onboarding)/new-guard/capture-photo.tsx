@@ -73,14 +73,34 @@ export default function CapturePhotoScreen() {
         const offsetY = (displayedHeight - screenHeight) / 2;
         const guideLeft = (screenWidth - 280) / 2;
 
-        const cropX = Math.max(0, Math.floor((guideLeft + offsetX) / scale));
-        const cropY = Math.max(0, Math.floor((guideTop + offsetY) / scale));
-        const cropWidth = Math.min(photoWidth, Math.floor(280 / scale));
-        const cropHeight = Math.min(photoHeight, Math.floor(280 / scale));
+        // 1. Find the center of the visual guide on the screen
+        const guideCenterX = guideLeft + (280 / 2);
+        const guideCenterY = guideTop + (380 / 2);
+
+        // 2. Define the square size needed to fully encompass the 280x380 guide
+        const squareSize = 380;
+        const halfSquare = squareSize / 2;
+
+        // 3. Calculate the top-left coordinates of this square on the screen
+        const squareLeft = guideCenterX - halfSquare;
+        const squareTop = guideCenterY - halfSquare;
+
+        // 4. Map the screen square coordinates to the raw photo resolution
+        const cropX = Math.max(0, Math.floor((squareLeft + offsetX) / scale));
+        const cropY = Math.max(0, Math.floor((squareTop + offsetY) / scale));
+        
+        // 5. Ensure the final crop is a perfect square and doesn't exceed photo boundaries
+        const targetCropSize = Math.floor(squareSize / scale);
+        const cropSize = Math.min(
+          targetCropSize, 
+          photoWidth - cropX, 
+          photoHeight - cropY
+        );
 
         const manipResult = await manipulateAsync(
           photoData.uri,
-          [{ crop: { originX: cropX, originY: cropY, width: cropWidth, height: cropHeight } }],
+          // Use the single cropSize for both width and height to guarantee a 1:1 image
+          [{ crop: { originX: cropX, originY: cropY, width: cropSize, height: cropSize } }],
           { compress: IMAGE_QUALITY, format: SaveFormat.JPEG }
         );
 
