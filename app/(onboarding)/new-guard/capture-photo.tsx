@@ -75,10 +75,10 @@ export default function CapturePhotoScreen() {
 
         // 1. Find the center of the visual guide on the screen
         const guideCenterX = guideLeft + (280 / 2);
-        const guideCenterY = guideTop + (380 / 2);
+        const guideCenterY = guideTop + (280 / 2);
 
         // 2. Define the square size needed to fully encompass the 280x380 guide
-        const squareSize = 380;
+        const squareSize = 280 / Math.SQRT2;
         const halfSquare = squareSize / 2;
 
         // 3. Calculate the top-left coordinates of this square on the screen
