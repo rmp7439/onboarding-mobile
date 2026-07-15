@@ -6,7 +6,6 @@ import { colors, spacing, typography, radius } from "../../src/theme";
 import { api } from "../../src/api/apiClient";
 import { RecentEmployeeStore } from "../../src/utils/RecentEmployeeStore";
 
-// ... Keep existing EmployeeProfile interface ...
 interface EmployeeProfile {
   id: string;
   firstName: string;
@@ -26,20 +25,24 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEmpty, setIsEmpty] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-
+      setIsEmpty(false);
+      
+      // Fetch the ID of the most recently registered employee from local storage
       const recentId = await RecentEmployeeStore.getId();
-
+      
       if (!recentId) {
-        setError("No recent employee has been registered on this device yet.");
+        setIsEmpty(true);
         setIsLoading(false);
         return;
       }
 
+      // Live fetch utilizing the ID tied strictly to the local state
       const data = await api.getEmployeeProfile(recentId);
       setProfile(data);
     } catch (err: any) {
@@ -53,10 +56,8 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchProfile();
-    }, [fetchProfile]),
+    }, [fetchProfile])
   );
-
-  // ... Keep getStatusBadgeStyle and formatDate ...
 
   const getStatusBadgeStyle = (status: string) => {
     switch (status.toUpperCase()) {
@@ -88,6 +89,23 @@ export default function ProfileScreen() {
     );
   }
 
+  // Display the exact requested empty state if no one has been registered yet
+  if (isEmpty) {
+    return (
+      <Screen style={styles.container}>
+        <View style={styles.centerContainer}>
+          <Text style={styles.emptyTitle}>No employee has been registered yet.</Text>
+          <Text style={styles.emptySubtitle}>Register an employee to view their profile.</Text>
+          <Button
+            title="Back to Dashboard"
+            onPress={() => router.back()}
+            style={styles.retryButton}
+          />
+        </View>
+      </Screen>
+    );
+  }
+
   if (error || !profile) {
     return (
       <View style={styles.centerContainer}>
@@ -108,7 +126,66 @@ export default function ProfileScreen() {
     <Screen style={styles.container}>
       <SectionTitle title="Employee Profile" style={styles.header} />
 
-      {/* ... Keep all existing Card and Profile UI structures intact ... */}
+      {/* Identity Card: Shows Photo, Name, Code, and Status */}
+      <Card style={styles.identityCard}>
+        <View style={styles.photoContainer}>
+          {profile.selfieUrl ? (
+            <Image
+              source={{ uri: profile.selfieUrl }}
+              style={styles.photo}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.photoPlaceholder}>
+              <Text style={styles.photoPlaceholderText}>
+                {profile.firstName.charAt(0)}
+                {profile.surname.charAt(0)}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <Text style={styles.nameText}>
+          {profile.firstName} {profile.surname}
+        </Text>
+        <Text style={styles.codeText}>
+          {profile.employeeCode || "Pending Assignment"}
+        </Text>
+
+        <View style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
+          <Text style={[styles.badgeText, { color: badgeStyle.text }]}>
+            {profile.status}
+          </Text>
+        </View>
+      </Card>
+
+      {/* Details Card: Strictly limited to non-sensitive fields */}
+      <Card style={styles.detailsCard}>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Mobile Number</Text>
+          <Text style={styles.detailValue}>+91 {profile.mobile}</Text>
+        </View>
+        <View style={styles.divider} />
+
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Joining Date</Text>
+          <Text style={styles.detailValue}>
+            {formatDate(profile.joiningDate)}
+          </Text>
+        </View>
+        <View style={styles.divider} />
+
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Gender</Text>
+          <Text style={styles.detailValue}>{profile.gender}</Text>
+        </View>
+        <View style={styles.divider} />
+
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Blood Group</Text>
+          <Text style={styles.detailValue}>{profile.bloodGroup}</Text>
+        </View>
+      </Card>
 
       <View style={styles.footer}>
         <Button
@@ -121,7 +198,6 @@ export default function ProfileScreen() {
   );
 }
 
-// ... existing styles ...
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { marginTop: spacing.md, marginBottom: spacing.lg },
@@ -131,6 +207,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: spacing.xl,
     backgroundColor: colors.background,
+  },
+  emptyTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
+  emptySubtitle: {
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.xl,
   },
   errorIcon: { fontSize: 48, marginBottom: spacing.md },
   errorText: {
