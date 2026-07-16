@@ -1,42 +1,35 @@
-import { Linking } from 'react-native';
+import { Session } from '../utils/Session';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "https://onboarding-backend-9uf0.onrender.com/api";
 
-// TASK 9 & 10: Extracted repeated fetch logic and added global network/timeout error handling
-async function safeRequest(endpoint: string, options: RequestInit) {
-  try {
-    const response = await fetch(`${API_URL}${endpoint}`, options);
-    let result;
-    
-    try {
-      result = await response.json();
-    } catch (e) {
-      throw new Error("Invalid response from server. Please try again.");
-    }
-    
-    if (!response.ok) {
-      throw new Error(result.error || "An unexpected error occurred.");
-    }
-    
-    return result.data;
-  } catch (error: any) {
-    if (error.message === "Network request failed" || error.name === "TypeError") {
-      throw new Error("Network unavailable. Please check your connection.");
-    }
-    throw error;
+// Helper function to attach the token to headers
+const getAuthHeaders = async (customHeaders: Record<string, string> = {}) => {
+  const session = await Session.getEmployeeSession();
+  const headers: Record<string, string> = {
+    ...customHeaders
+  };
+  
+  if (session && session.token) {
+    headers['Authorization'] = `Bearer ${session.token}`;
   }
-}
+  
+  return headers;
+};
 
 export const api = {
-  registerEmployee: (employeeData: any) => {
-    return safeRequest("/employee/register", {
+  registerEmployee: async (employeeData: any) => {
+    const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+    const response = await fetch(`${API_URL}/employee/register`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(employeeData),
     });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Registration failed");
+    return result.data;
   },
 
-  uploadSelfie: (employeeId: string, photoUri: string) => {
+  uploadSelfie: async (employeeId: string, photoUri: string) => {
     const formData = new FormData();
     const filename = photoUri.split("/").pop() || "selfie.jpg";
 
@@ -46,21 +39,30 @@ export const api = {
       type: "image/jpeg",
     } as any);
 
-    return safeRequest(`/employee/${employeeId}/selfie`, {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_URL}/employee/${employeeId}/selfie`, {
       method: "POST",
+      headers,
       body: formData,
     });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Selfie upload failed");
+    return result.data;
   },
 
-  employeeLogin: (mobile: string, otp: string) => {
-    return safeRequest("/employee/auth/login", {
+  employeeLogin: async (mobile: string, otp: string) => {
+    const response = await fetch(`${API_URL}/employee/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mobile, otp }),
     });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Login failed");
+    return result.data;
   },
 
-  uploadDocument: (employeeId: string, type: string, fileUri: string) => {
+  uploadDocument: async (employeeId: string, type: string, fileUri: string) => {
     const formData = new FormData();
     const filename = fileUri.split("/").pop() || "document.jpg";
     const match = /\.(\w+)$/.exec(filename);
@@ -73,54 +75,40 @@ export const api = {
     } as any);
     formData.append("type", type);
 
-    return safeRequest(`/employee/${employeeId}/document`, {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_URL}/employee/${employeeId}/document`, {
       method: "POST",
+      headers,
       body: formData,
     });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || `Failed to upload ${type}`);
+    return result.data;
   },
 
-  searchEmployees: (query: string) => {
-    return safeRequest(`/employees/search?q=${encodeURIComponent(query)}`, {
+  searchEmployees: async (query: string) => {
+    const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+    const response = await fetch(
+      `${API_URL}/employees/search?q=${encodeURIComponent(query)}`,
+      {
+        method: "GET",
+        headers,
+      }
+    );
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Search failed");
+    return result.data;
+  },
+
+  getEmployeeProfile: async (employeeId: string) => {
+    const headers = await getAuthHeaders({ "Content-Type": "application/json" });
+    const response = await fetch(`${API_URL}/employee/profile/${employeeId}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers,
     });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Failed to fetch profile");
+    return result.data;
   },
-
-  getEmployeeProfile: (employeeId: string) => {
-    return safeRequest(`/employee/profile/${employeeId}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-  },
-
-  getReportResults: (filters: any) => {
-    const queryParams = new URLSearchParams();
-    if (filters.month) queryParams.append("month", filters.month);
-    if (filters.year) queryParams.append("year", filters.year);
-    if (filters.joiningDate) queryParams.append("joiningDate", filters.joiningDate);
-
-    return safeRequest(`/reports/employees?${queryParams.toString()}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-  },
-
-  getReportEmployeeDetail: (employeeId: string) => {
-    return safeRequest(`/reports/employee/${employeeId}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-  },
-
-  exportReportExcel: (filters: any) => {
-    const queryParams = new URLSearchParams();
-    if (filters.month) queryParams.append("month", filters.month);
-    if (filters.year) queryParams.append("year", filters.year);
-    if (filters.joiningDate) queryParams.append("joiningDate", filters.joiningDate);
-    
-    const url = `${API_URL}/reports/export/excel?${queryParams.toString()}`;
-    Linking.openURL(url).catch(err => {
-      console.error("Failed to open export link", err);
-    });
-  }
 };
