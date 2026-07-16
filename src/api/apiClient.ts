@@ -34,6 +34,23 @@ export const api = {
     return result.data;
   },
 
+  getReportResults: async (filters: any) => {
+    // Construct query string dynamically
+    const queryParams = new URLSearchParams();
+    if (filters.month) queryParams.append("month", filters.month);
+    if (filters.year) queryParams.append("year", filters.year);
+    if (filters.joiningDate) queryParams.append("joiningDate", filters.joiningDate);
+
+    const response = await fetch(`${API_URL}/reports/employees?${queryParams.toString()}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Failed to fetch report results");
+    return result.data;
+  },
+
   // Add this inside the api object exported in apiClient.ts
   employeeLogin: async (mobile: string, otp: string) => {
     const response = await fetch(`${API_URL}/employee/auth/login`, {
