@@ -9,21 +9,25 @@ import { Session } from "../../src/utils/Session";
 export default function OTPScreen() {
   const router = useRouter();
   const { mobile } = useLocalSearchParams<{ mobile: string }>();
+  
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const isCorrect = otp.length === 6;
 
   const handleVerify = async () => {
-    if (!isCorrect) return;
+    if (!isCorrect || isLoading) return; // Prevent duplicate submissions
     
     setIsLoading(true);
+    setErrorMsg(null);
+    
     try {
       const data = await api.employeeLogin(mobile || "9876543210", otp);
       await Session.saveEmployeeSession(data);
       router.replace("/(onboarding)/home");
     } catch (error: any) {
-      // Fallback for demo purposes if backend isn't seeded with the test number
+      // Fallback for demo purposes
       if (mobile === "9876543210" && otp === "123456") {
         await Session.saveEmployeeSession({ 
           employeeId: "demo-id", 
@@ -32,7 +36,8 @@ export default function OTPScreen() {
         });
         router.replace("/(onboarding)/home");
       } else {
-        alert(error.message || "Invalid OTP");
+        // TASK 9: Replace raw alert with UI error state
+        setErrorMsg(error.message || "Invalid OTP. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -45,9 +50,12 @@ export default function OTPScreen() {
         <SectionTitle title="Verify OTP" style={styles.header} />
         <Card style={styles.card}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, !!errorMsg && styles.inputError]}
             value={otp}
-            onChangeText={setOtp}
+            onChangeText={(text) => {
+              setOtp(text);
+              if (errorMsg) setErrorMsg(null);
+            }}
             placeholder="Enter OTP"
             keyboardType="numeric"
             maxLength={6}
@@ -56,6 +64,7 @@ export default function OTPScreen() {
             onSubmitEditing={handleVerify}
             editable={!isLoading}
           />
+          {!!errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
         </Card>
       </View>
       <View style={styles.footer}>
@@ -88,14 +97,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     letterSpacing: 4,
   },
-  inputError: {
-    borderColor: colors.error,
-    backgroundColor: "#FFFAFA",
-  },
+  inputError: { borderColor: colors.error, backgroundColor: "#FFFAFA" },
   errorText: {
     color: colors.error,
     fontSize: typography.fontSize.sm,
-    marginTop: spacing.xs,
+    marginTop: spacing.md,
     textAlign: "center",
     fontWeight: typography.fontWeight.medium,
   },

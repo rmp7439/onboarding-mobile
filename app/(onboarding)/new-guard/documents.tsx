@@ -87,6 +87,7 @@ export default function DocumentsScreen() {
 
   const handlePickImage = async (id: string, source: "gallery" | "camera") => {
     try {
+      setErrorText(null); // Clear previous errors
       let result;
       if (source === "gallery") {
         result = await ImagePicker.launchImageLibraryAsync({
@@ -103,19 +104,14 @@ export default function DocumentsScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const filename =
-          asset.fileName || asset.uri.split("/").pop() || "document.jpg";
+        const filename = asset.fileName || asset.uri.split("/").pop() || "document.jpg";
         setDocuments((prev) =>
-          prev.map((doc) =>
-            doc.id === id ? { ...doc, uri: asset.uri, filename } : doc,
-          ),
+          prev.map((doc) => doc.id === id ? { ...doc, uri: asset.uri, filename } : doc)
         );
       }
     } catch (error: any) {
-      Alert.alert(
-        "Error",
-        error.message || "Something went wrong while attaching the document.",
-      );
+      // TASK 9: Replace Alert.alert with consistent UI banner
+      setErrorText(error.message || "Failed to access media. Please check permissions.");
     }
   };
 
