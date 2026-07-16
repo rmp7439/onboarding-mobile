@@ -1,4 +1,4 @@
-export const colors = {
+export const lightColors = {
   primary: '#007AFF',
   secondary: '#5856D6',
   background: '#F2F2F7',
@@ -13,3 +13,24 @@ export const colors = {
   white: '#FFFFFF',
   black: '#000000',
 };
+
+export const darkColors = {
+  primary: '#0A84FF',
+  secondary: '#5E5CE6',
+  background: '#000000', // Pure black for OLED efficiency
+  surface: '#1C1C1E',    // Elevated surface color
+  card: '#1C1C1E',
+  text: '#FFFFFF',
+  textSecondary: '#EBEBF599',
+  border: '#38383A',
+  success: '#32D74B',
+  warning: '#FF9F0A',
+  error: '#FF453A',
+  white: '#FFFFFF',
+  black: '#000000',
+};
+
+// Default export acts as fallback for any untouched statically imported files
+export const colors = lightColors; 
+
+export type ThemeColors = typeof lightColors;

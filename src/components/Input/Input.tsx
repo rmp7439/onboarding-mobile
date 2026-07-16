@@ -1,12 +1,7 @@
 import React, { forwardRef } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TextInputProps,
-  StyleSheet,
-} from "react-native";
-import { colors, spacing, radius, typography } from "../../theme";
+import { View, Text, TextInput, TextInputProps, StyleSheet } from "react-native";
+import { spacing, radius, typography } from "../../theme";
+import { useTheme } from "../../context/ThemeContext";
 
 export interface InputProps extends TextInputProps {
   label: string;
@@ -15,23 +10,23 @@ export interface InputProps extends TextInputProps {
 }
 
 export const Input = forwardRef<TextInput, InputProps>(
-  (
-    { label, error, required, style, editable = true, multiline, ...props },
-    ref,
-  ) => {
+  ({ label, error, required, style, editable = true, multiline, ...props }, ref) => {
+    const { colors } = useTheme();
+    
     return (
       <View style={styles.container}>
-        <Text style={styles.label}>
+        <Text style={[styles.label, { color: colors.text }]}>
           {label}
-          {required && <Text style={styles.requiredAsterisk}> *</Text>}
+          {required && <Text style={{ color: colors.error }}> *</Text>}
         </Text>
         <TextInput
           ref={ref}
           style={[
             styles.input,
+            { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border },
             multiline && styles.multilineInput,
-            !editable && styles.disabledInput,
-            !!error && styles.errorInput,
+            !editable && { backgroundColor: colors.background, color: colors.textSecondary },
+            !!error && { borderColor: colors.error },
             style,
           ]}
           placeholderTextColor={colors.textSecondary}
@@ -39,42 +34,16 @@ export const Input = forwardRef<TextInput, InputProps>(
           multiline={multiline}
           {...props}
         />
-        {!!error && <Text style={styles.errorText}>{error}</Text>}
+        {!!error && <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>}
       </View>
     );
-  },
+  }
 );
 
-// ... existing styles remain completely unchanged ...
 const styles = StyleSheet.create({
   container: { marginBottom: spacing.md },
-  label: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  requiredAsterisk: { color: colors.error },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: typography.fontSize.md,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    minHeight: 48,
-  },
+  label: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, marginBottom: spacing.xs },
+  input: { borderWidth: 1, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: typography.fontSize.md, minHeight: 48 },
   multilineInput: { minHeight: 100, textAlignVertical: "top" },
-  disabledInput: {
-    backgroundColor: colors.background,
-    color: colors.textSecondary,
-  },
-  errorInput: { borderColor: colors.error },
-  errorText: {
-    color: colors.error,
-    fontSize: typography.fontSize.xs,
-    marginTop: spacing.xs,
-  },
+  errorText: { fontSize: typography.fontSize.xs, marginTop: spacing.xs },
 });

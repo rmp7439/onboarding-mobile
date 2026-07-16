@@ -1,12 +1,7 @@
 import React from 'react';
-import { 
-  TouchableOpacity, 
-  Text, 
-  ActivityIndicator, 
-  StyleSheet, 
-  TouchableOpacityProps 
-} from 'react-native';
-import { colors, spacing, radius, typography } from '../../theme';
+import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, TouchableOpacityProps } from 'react-native';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
 
 export interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -14,14 +9,8 @@ export interface ButtonProps extends TouchableOpacityProps {
   loading?: boolean;
 }
 
-export function Button({
-  title,
-  variant = 'primary',
-  loading = false,
-  disabled = false,
-  style,
-  ...props
-}: ButtonProps) {
+export function Button({ title, variant = 'primary', loading = false, disabled = false, style, ...props }: ButtonProps) {
+  const { colors } = useTheme();
   const isOutline = variant === 'outline';
   const isDisabled = disabled || loading;
 
@@ -43,8 +32,7 @@ export function Button({
       style={[
         styles.container,
         { backgroundColor: getBackgroundColor() },
-        isOutline && styles.outlineBorder,
-        isDisabled && isOutline && styles.outlineDisabled,
+        isOutline && { borderWidth: 1, borderColor: isDisabled ? colors.border : colors.primary },
         style,
       ]}
       disabled={isDisabled}
@@ -54,32 +42,13 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={getTextColor()} />
       ) : (
-        <Text style={[styles.text, { color: getTextColor() }]}>
-          {title}
-        </Text>
+        <Text style={[styles.text, { color: getTextColor() }]}>{title}</Text>
       )}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    height: 48,
-    borderRadius: radius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    flexDirection: 'row',
-  },
-  outlineBorder: {
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  outlineDisabled: {
-    borderColor: colors.border,
-  },
-  text: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-  },
+  container: { height: 48, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center', paddingHorizontal: spacing.lg, flexDirection: 'row' },
+  text: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.semibold },
 });

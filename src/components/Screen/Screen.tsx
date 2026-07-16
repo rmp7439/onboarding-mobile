@@ -1,15 +1,8 @@
 import React from 'react';
-import { 
-  View, 
-  ScrollView, 
-  StyleSheet, 
-  ViewStyle, 
-  KeyboardAvoidingView, 
-  Platform,
-  RefreshControlProps
-} from 'react-native';
+import { View, ScrollView, StyleSheet, ViewStyle, KeyboardAvoidingView, Platform, RefreshControlProps } from 'react-native';
 import { SafeAreaView, Edge } from 'react-native-safe-area-context';
-import { colors, spacing } from '../../theme';
+import { spacing } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
 
 export interface ScreenProps {
   children: React.ReactNode;
@@ -19,13 +12,9 @@ export interface ScreenProps {
   refreshControl?: React.ReactElement<RefreshControlProps>;
 }
 
-export function Screen({
-  children,
-  scrollable = true,
-  style,
-  safeAreaEdges = ['top', 'bottom', 'left', 'right'],
-  refreshControl,
-}: ScreenProps) {
+export function Screen({ children, scrollable = true, style, safeAreaEdges = ['top', 'bottom', 'left', 'right'], refreshControl }: ScreenProps) {
+  const { colors } = useTheme();
+
   const content = scrollable ? (
     <ScrollView
       contentContainerStyle={[styles.scrollContent, style]}
@@ -39,12 +28,9 @@ export function Screen({
     <View style={[styles.nonScrollContent, style]}>{children}</View>
   );
 
-  // By placing KeyboardAvoidingView as the outermost wrapper, it manages the entire screen layout.
-  // This prevents SafeAreaView's bottom edge calculations from interfering with Android's adjustResize 
-  // and ensures iOS padding works natively around the safe area.
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardAvoid}
+      style={[styles.keyboardAvoid, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <SafeAreaView edges={safeAreaEdges} style={styles.safeArea}>
@@ -55,19 +41,8 @@ export function Screen({
 }
 
 const styles = StyleSheet.create({
-  keyboardAvoid: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: spacing.md,
-  },
-  nonScrollContent: {
-    flex: 1,
-    padding: spacing.md,
-  },
+  keyboardAvoid: { flex: 1 },
+  safeArea: { flex: 1 },
+  scrollContent: { flexGrow: 1, padding: spacing.md },
+  nonScrollContent: { flex: 1, padding: spacing.md },
 });
