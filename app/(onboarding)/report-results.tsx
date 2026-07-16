@@ -1,14 +1,21 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from "react-native";
-import { useRouter, useLocalSearchParams, Stack } from "expo-router";
-import { Screen, Card, SectionTitle, Button } from "../../src/components";
-import { colors, spacing, typography, radius } from "../../src/theme";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { api } from "../../src/api/apiClient";
+import { Button, Card, Screen, SectionTitle } from "../../src/components";
+import { colors, spacing, typography } from "../../src/theme";
 
 export default function ReportResultsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  
+
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +37,10 @@ export default function ReportResultsScreen() {
     fetchResults();
   }, [fetchResults]);
 
+  const handleExport = () => {
+    api.exportReportExcel(params);
+  };
+
   const formatDate = (isoString: string) => {
     if (!isoString) return "N/A";
     const date = new Date(isoString);
@@ -41,59 +52,90 @@ export default function ReportResultsScreen() {
   };
 
   const renderItem = ({ item }: { item: any }) => (
-    <Card style={styles.rowCard}>
-      <View style={styles.rowHeader}>
-        <Text style={styles.nameText}>{item.firstName} {item.surname}</Text>
-      </View>
-      <View style={styles.rowDetails}>
-        <View style={styles.detailItem}>
-          <Text style={styles.detailLabel}>Code</Text>
-          <Text style={styles.codeText}>{item.employeeCode || "Pending"}</Text>
+    <Pressable
+      onPress={() =>
+        router.push({
+          pathname: "./report-employee-detail",
+          params: { id: String(item.id) },
+        })
+      }
+    >
+      <Card style={styles.rowCard}>
+        <View style={styles.rowHeader}>
+          <Text style={styles.nameText}>
+            {item.firstName} {item.surname}
+          </Text>
         </View>
-        <View style={styles.detailItem}>
-          <Text style={styles.detailLabel}>Joining Date</Text>
-          <Text style={styles.dateText}>{formatDate(item.joiningDate)}</Text>
+        <View style={styles.rowDetails}>
+          <View style={styles.detailItem}>
+            <Text style={styles.detailLabel}>Code</Text>
+            <Text style={styles.codeText}>
+              {item.employeeCode || "Pending"}
+            </Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Text style={styles.detailLabel}>Joining Date</Text>
+            <Text style={styles.dateText}>{formatDate(item.joiningDate)}</Text>
+          </View>
         </View>
-      </View>
-    </Card>
+      </Card>
+    </Pressable>
   );
 
   return (
     <Screen style={styles.container} scrollable={false}>
       <Stack.Screen options={{ headerShown: false }} />
-      
-      <View style={styles.headerContainer}>
-        <Button 
-          title="Back" 
-          variant="outline" 
-          onPress={() => router.back()} 
-          style={styles.backButton} 
+
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <Button
+            title="Back"
+            variant="outline"
+            onPress={() => router.back()}
+            style={styles.backButton}
+          />
+          <SectionTitle title="Report Results" style={styles.title} />
+        </View>
+        <Button
+          title="Export Excel"
+          onPress={handleExport}
+          disabled={isLoading || results.length === 0}
+          style={styles.exportButton}
         />
-        <SectionTitle title="Report Results" style={styles.title} />
       </View>
 
       <View style={styles.content}>
         {isLoading ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+            <ActivityIndicator
+              size="large"
+              color={colors.primary}
+              style={styles.loader}
+            />
             <Text style={styles.loadingText}>Fetching employees...</Text>
           </View>
         ) : error ? (
           <View style={styles.centerContainer}>
             <Text style={styles.errorIcon}>⚠️</Text>
             <Text style={styles.errorText}>{error}</Text>
-            <Button title="Retry" onPress={fetchResults} style={styles.retryButton} />
+            <Button
+              title="Retry"
+              onPress={fetchResults}
+              style={styles.retryButton}
+            />
           </View>
         ) : results.length === 0 ? (
           <View style={styles.centerContainer}>
             <Text style={styles.emptyIcon}>🔍</Text>
             <Text style={styles.emptyText}>No employees found</Text>
-            <Text style={styles.emptySubtext}>Try adjusting your report filters.</Text>
+            <Text style={styles.emptySubtext}>
+              Try adjusting your report filters.
+            </Text>
           </View>
         ) : (
           <FlatList
             data={results}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => String(item.id)}
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
@@ -106,17 +148,22 @@ export default function ReportResultsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: spacing.md,
-    gap: spacing.md
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
   },
   backButton: { height: 40, paddingHorizontal: spacing.md },
+  exportButton: { height: 40 },
   title: { marginBottom: 0 },
   content: { flex: 1, marginTop: spacing.md },
-  
-  // States
+
   centerContainer: {
     flex: 1,
     justifyContent: "center",
@@ -124,8 +171,10 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   loader: { transform: [{ scale: 1.2 }], marginBottom: spacing.md },
-  loadingText: { fontSize: typography.fontSize.md, color: colors.textSecondary },
-  
+  loadingText: {
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
+  },
   emptyIcon: { fontSize: 48, marginBottom: spacing.md },
   emptyText: {
     fontSize: typography.fontSize.lg,
@@ -138,7 +187,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
   },
-  
   errorIcon: { fontSize: 48, marginBottom: spacing.md },
   errorText: {
     color: colors.textSecondary,
@@ -148,27 +196,26 @@ const styles = StyleSheet.create({
   },
   retryButton: { width: "100%", maxWidth: 200 },
 
-  // List Styles
   listContent: { paddingBottom: spacing.xl, gap: spacing.md },
   rowCard: { padding: spacing.md },
   rowHeader: { marginBottom: spacing.sm },
   nameText: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    color: colors.text
+    color: colors.text,
   },
   rowDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: spacing.sm
+    paddingTop: spacing.sm,
   },
   detailItem: { flex: 1 },
   detailLabel: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
-    marginBottom: 2
+    marginBottom: 2,
   },
   codeText: {
     fontSize: typography.fontSize.md,
