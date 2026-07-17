@@ -26,7 +26,7 @@ export default function OTPScreen() {
       const data = await api.employeeLogin(mobile || "9876543210", otp);
       await Session.saveEmployeeSession(data);
       router.replace("/(onboarding)/home");
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Fallback for demo purposes
       if (mobile === "9876543210" && otp === "123456") {
         await Session.saveEmployeeSession({ 
@@ -36,8 +36,8 @@ export default function OTPScreen() {
         });
         router.replace("/(onboarding)/home");
       } else {
-        // TASK 9: Replace raw alert with UI error state
-        setErrorMsg(error.message || "Invalid OTP. Please try again.");
+        const message = error instanceof Error ? error.message : "Invalid OTP. Please try again.";
+        setErrorMsg(message);
       }
     } finally {
       setIsLoading(false);

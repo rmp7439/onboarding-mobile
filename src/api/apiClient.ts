@@ -33,8 +33,8 @@ async function safeRequest(endpoint: string, options: RequestInit = {}) {
     }
     
     return result.data;
-  } catch (error: any) {
-    if (error.message === "Network request failed" || error.name === "TypeError") {
+  } catch (error: unknown) {
+    if (error instanceof Error && (error.message === "Network request failed" || error.name === "TypeError")) {
       throw new Error("Network unavailable. Please check your connection.");
     }
     throw error;
