@@ -34,7 +34,6 @@ export default function ProfileScreen() {
       setError(null);
       setIsEmpty(false);
       
-      // Fetch the ID of the most recently registered employee from local storage
       const recentId = await RecentEmployeeStore.getId();
       
       if (!recentId) {
@@ -43,7 +42,6 @@ export default function ProfileScreen() {
         return;
       }
 
-      // Live fetch utilizing the ID tied strictly to the local state
       const data = await api.getEmployeeProfile(recentId);
       setProfile(data);
     } catch (err: any) {
@@ -53,7 +51,6 @@ export default function ProfileScreen() {
     }
   }, []);
 
-  // Fetch fresh data every time this screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchProfile();
@@ -90,7 +87,6 @@ export default function ProfileScreen() {
     );
   }
 
-  // Display the exact requested empty state if no one has been registered yet
   if (isEmpty) {
     return (
       <Screen style={styles.container}>
@@ -127,7 +123,6 @@ export default function ProfileScreen() {
     <Screen style={styles.container}>
       <SectionTitle title="Employee Profile" style={styles.header} />
 
-      {/* Identity Card: Shows Photo, Name, Code, and Status */}
       <Card style={styles.identityCard}>
         <View style={styles.photoContainer}>
           {profile.selfieUrl ? (
@@ -160,14 +155,14 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
-      {profile.status.toUpperCase() === "REJECTED" && profile.rejectReason && (
+      {/* Conditionally rendered Rejection Card */}
+      {profile.status.toUpperCase() === "REJECTED" && profile.rejectReason ? (
         <Card style={[styles.detailsCard, styles.rejectionCard]}>
           <Text style={styles.rejectionTitle}>Application Rejected</Text>
           <Text style={styles.rejectionBody}>{profile.rejectReason}</Text>
         </Card>
-      )}
+      ) : null}
 
-      {/* Details Card: Strictly limited to non-sensitive fields */}
       <Card style={styles.detailsCard}>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Mobile Number</Text>
@@ -295,6 +290,24 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
+  // Styles for conditional rejection component
+  rejectionCard: {
+    borderColor: colors.error,
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+  },
+  rejectionTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.error,
+    marginBottom: spacing.xs,
+  },
+  rejectionBody: {
+    fontSize: typography.fontSize.md,
+    color: colors.error,
+    lineHeight: typography.lineHeight.md,
+  },
+
   detailsCard: { padding: spacing.lg, marginBottom: spacing.xl },
   detailRow: {
     flexDirection: "row",
@@ -313,20 +326,4 @@ const styles = StyleSheet.create({
   },
   divider: { height: 1, backgroundColor: colors.border, opacity: 0.3 },
   footer: { paddingBottom: spacing.xl },
-  rejectionCard: {
-    borderColor: colors.error,
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-  },
-  rejectionTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.error,
-    marginBottom: spacing.xs,
-  },
-  rejectionBody: {
-    fontSize: typography.fontSize.md,
-    color: colors.error,
-    lineHeight: typography.lineHeight.md,
-  },
 });
