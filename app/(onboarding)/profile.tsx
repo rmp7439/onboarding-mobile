@@ -29,26 +29,50 @@ export default function ProfileScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isEmpty, setIsEmpty] = useState(false);
 
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(async (isBackground: boolean = false) => {
     try {
-      setIsLoading(true);
-      setError(null);
-      setIsEmpty(false);
+      if (!isBackground) {
+        setIsLoading(true);
+        setError(null);
+        setIsEmpty(false);
+      }
 
       const recentId = await RecentEmployeeStore.getId();
 
       if (!recentId) {
-        setIsEmpty(true);
-        setIsLoading(false);
+        if (!isBackground) {
+          setIsEmpty(true);
+          setIsLoading(false);
+        }
         return;
       }
 
       const data = await api.getEmployeeProfile(recentId);
-      setProfile(data);
+
+      setProfile((prevProfile) => {
+        // If we don't have a profile yet, accept the new data
+        if (!prevProfile) return data;
+
+        // Intelligent comparison: Only check fields that realistically change via Admin
+        const hasMeaningfulChange =
+          prevProfile.status !== data.status ||
+          prevProfile.employeeCode !== data.employeeCode ||
+          prevProfile.rejectReason !== data.rejectReason ||
+          prevProfile.selfieUrl !== data.selfieUrl;
+
+        // By returning the prevProfile reference when nothing changes,
+        // React strictly bails out of the re-render completely.
+        return hasMeaningfulChange ? data : prevProfile;
+      });
     } catch (err: any) {
-      setError(err.message || "Failed to load profile.");
+      // Only set UI errors on manual/initial foreground loads, ignore transient background errors
+      if (!isBackground) {
+        setError(err.message || "Failed to load profile.");
+      }
     } finally {
-      setIsLoading(false);
+      if (!isBackground) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -57,23 +81,31 @@ export default function ProfileScreen() {
       let isActive = true;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-      const executePoll = async () => {
+      const executeBackgroundPoll = async () => {
         if (!isActive) return;
 
-        await fetchProfile();
+        // Execute silently in the background
+        await fetchProfile(true);
 
-        // Schedule the next poll only after the current request finishes
-        // to completely prevent overlapping requests on slow networks.
+        // Schedule next poll ONLY after the previous request resolves to prevent overlapping
         if (isActive) {
-          timeoutId = setTimeout(executePoll, 5000);
+          timeoutId = setTimeout(executeBackgroundPoll, 5000);
         }
       };
 
-      // Start the polling cycle
-      executePoll();
+      const startLifecycle = async () => {
+        // Initial fetch visually updates loading states
+        await fetchProfile(false);
+
+        // Begin the silent polling cycle
+        if (isActive) {
+          timeoutId = setTimeout(executeBackgroundPoll, 5000);
+        }
+      };
+
+      startLifecycle();
 
       return () => {
-        // Cleanup immediately when screen loses focus
         isActive = false;
         if (timeoutId) {
           clearTimeout(timeoutId);
