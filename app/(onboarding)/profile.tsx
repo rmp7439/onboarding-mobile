@@ -50,22 +50,30 @@ export default function ProfileScreen() {
       const data = await api.getEmployeeProfile(recentId);
 
       setProfile((prevProfile) => {
-        // If we don't have a profile yet, accept the new data
+        // Accept initial data payload
         if (!prevProfile) return data;
 
-        // Intelligent comparison: Only check fields that realistically change via Admin
+        // Compare ONLY mutable fields. Explicitly exclude selfieUrl because
+        // the signed URL signature changes every request.
         const hasMeaningfulChange =
           prevProfile.status !== data.status ||
           prevProfile.employeeCode !== data.employeeCode ||
-          prevProfile.rejectReason !== data.rejectReason ||
-          prevProfile.selfieUrl !== data.selfieUrl;
+          prevProfile.rejectReason !== data.rejectReason;
 
-        // By returning the prevProfile reference when nothing changes,
-        // React strictly bails out of the re-render completely.
-        return hasMeaningfulChange ? data : prevProfile;
+        if (hasMeaningfulChange) {
+          return {
+            ...data,
+            // Preserve the exact string reference of the original URL.
+            // This prevents React Native's <Image> prop identity from changing,
+            // ensuring the view never flashes or reloads the image data.
+            selfieUrl: prevProfile.selfieUrl,
+          };
+        }
+
+        // Return exact existing reference to completely bypass React reconciliation
+        return prevProfile;
       });
     } catch (err: any) {
-      // Only set UI errors on manual/initial foreground loads, ignore transient background errors
       if (!isBackground) {
         setError(err.message || "Failed to load profile.");
       }
@@ -84,20 +92,16 @@ export default function ProfileScreen() {
       const executeBackgroundPoll = async () => {
         if (!isActive) return;
 
-        // Execute silently in the background
         await fetchProfile(true);
 
-        // Schedule next poll ONLY after the previous request resolves to prevent overlapping
         if (isActive) {
           timeoutId = setTimeout(executeBackgroundPoll, 5000);
         }
       };
 
       const startLifecycle = async () => {
-        // Initial fetch visually updates loading states
         await fetchProfile(false);
 
-        // Begin the silent polling cycle
         if (isActive) {
           timeoutId = setTimeout(executeBackgroundPoll, 5000);
         }
