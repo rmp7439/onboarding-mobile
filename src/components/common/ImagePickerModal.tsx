@@ -1,282 +1,103 @@
-import React, {
-  useRef,
-  useState,
-  useEffect,
-  useImperativeHandle,
-} from "react";
+import React from "react";
 import {
+  Modal,
   View,
   Text,
-  TextInput,
+  Pressable,
   StyleSheet,
-  NativeSyntheticEvent,
+  Platform,
 } from "react-native";
-import { colors, spacing, radius, typography } from "../../theme";
+import { colors, spacing, typography, radius } from "../../theme";
 
-export type SegmentType = "numeric" | "alpha" | "fixed";
-
-export interface SegmentConfig {
-  length: number;
-  type: SegmentType;
-  value?: string;
+interface ImagePickerModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onCamera: () => void;
+  onGallery: () => void;
 }
 
-export interface SegmentedInputProps {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  segments: SegmentConfig[];
-  required?: boolean;
-  disabled?: boolean;
-  error?: string;
-  onSubmitEditing?: () => void;
-  returnKeyType?: "done" | "next";
-  ref?: React.Ref<{ focus: () => void }>;
-}
-
-export function SegmentedInput({
-  label,
-  value,
-  onChange,
-  segments,
-  required = false,
-  disabled = false,
-  error,
-  onSubmitEditing,
-  returnKeyType = "next",
-  ref,
-}: SegmentedInputProps) {
-  const inputRefs = useRef<Array<TextInput | null>>([]);
-
-  const [chunks, setChunks] = useState<string[]>(() => {
-    let currentIdx = 0;
-    return segments.map((seg) => {
-      if (seg.type === "fixed" && seg.value) return seg.value;
-      const chunk = (value || "").slice(currentIdx, currentIdx + seg.length);
-      currentIdx += seg.length;
-      return chunk;
-    });
-  });
-
-  useImperativeHandle(ref, () => ({
-    focus: () => {
-      const firstEditable = segments.findIndex((s) => s.type !== "fixed");
-      if (firstEditable !== -1) inputRefs.current[firstEditable]?.focus();
-    },
-  }));
-
-  const lastEditableIndex = segments
-    .map((s, i) => (s.type !== "fixed" ? i : -1))
-    .filter((i) => i !== -1)
-    .pop();
-
-  useEffect(() => {
-    if (!value) {
-      setChunks(
-        segments.map((seg) =>
-          seg.type === "fixed" && seg.value ? seg.value : "",
-        ),
-      );
-    } else {
-      const expectedLength = segments.reduce((acc, s) => acc + s.length, 0);
-      if (value.length === expectedLength) {
-        setChunks((prev) => {
-          if (prev.join("") === value) return prev;
-          let currentIdx = 0;
-          return segments.map((seg) => {
-            if (seg.type === "fixed" && seg.value) {
-              currentIdx += seg.length;
-              return seg.value;
-            }
-            const chunk = value.slice(currentIdx, currentIdx + seg.length);
-            currentIdx += seg.length;
-            return chunk;
-          });
-        });
-      }
-    }
-  }, [value, segments]);
-
-  const handleChange = (text: string, index: number) => {
-    const seg = segments[index];
-    if (seg.type === "fixed") return;
-
-    if (text.length > seg.length) {
-      let pasted = text.toUpperCase().replace(/[^A-Z0-9]/g, "");
-      let reconstructed = "";
-      let pIdx = 0;
-      const newChunks = [...chunks];
-
-      for (let i = 0; i < segments.length; i++) {
-        const s = segments[i];
-        if (s.type === "fixed" && s.value) {
-          reconstructed += s.value;
-          newChunks[i] = s.value;
-          if (pasted[pIdx] === s.value) pIdx++;
-        } else {
-          let chunk = pasted.slice(pIdx, pIdx + s.length);
-          if (s.type === "numeric") chunk = chunk.replace(/\D/g, "");
-          if (s.type === "alpha") chunk = chunk.replace(/[^A-Z]/g, "");
-          reconstructed += chunk;
-          newChunks[i] = chunk;
-          pIdx += s.length;
-        }
-      }
-
-      setChunks(newChunks);
-      onChange(reconstructed);
-
-      let lastFilled = -1;
-      for (let i = newChunks.length - 1; i >= 0; i--) {
-        if (newChunks[i].length > 0) {
-          lastFilled = i;
-          break;
-        }
-      }
-      if (lastFilled >= 0 && lastFilled < segments.length - 1) {
-        inputRefs.current[lastFilled + 1]?.focus();
-      } else if (lastFilled === segments.length - 1) {
-        inputRefs.current[lastFilled]?.focus();
-      }
-      return;
-    }
-
-    let sanitized = text;
-    if (seg.type === "numeric") sanitized = sanitized.replace(/\D/g, "");
-    else if (seg.type === "alpha")
-      sanitized = sanitized.replace(/[^a-zA-Z]/g, "").toUpperCase();
-
-    const newChunks = [...chunks];
-    newChunks[index] = sanitized;
-
-    segments.forEach((s, i) => {
-      if (s.type === "fixed" && s.value) newChunks[i] = s.value;
-    });
-
-    setChunks(newChunks);
-    onChange(newChunks.join(""));
-
-    if (sanitized.length === seg.length && index < segments.length - 1) {
-      let nextIdx = index + 1;
-      while (
-        nextIdx < segments.length &&
-        segments[nextIdx].type === "fixed"
-      ) {
-        nextIdx++;
-      }
-      if (nextIdx < segments.length) {
-        inputRefs.current[nextIdx]?.focus();
-      }
-    }
-  };
-
-  const handleKeyPress = (
-    e: NativeSyntheticEvent<{ key: string }>,
-    index: number,
-  ) => {
-    if (
-      e.nativeEvent.key === "Backspace" &&
-      chunks[index] === "" &&
-      index > 0
-    ) {
-      let prevIdx = index - 1;
-      while (prevIdx >= 0 && segments[prevIdx].type === "fixed") {
-        prevIdx--;
-      }
-      if (prevIdx >= 0) inputRefs.current[prevIdx]?.focus();
-    }
-  };
-
-  const handleSubmitEditing = (index: number) => {
-    if (index === lastEditableIndex) {
-      if (onSubmitEditing) onSubmitEditing();
-    } else {
-      let nextIdx = index + 1;
-      while (
-        nextIdx < segments.length &&
-        segments[nextIdx].type === "fixed"
-      ) {
-        nextIdx++;
-      }
-      if (nextIdx < segments.length) inputRefs.current[nextIdx]?.focus();
-    }
-  };
+export default function ImagePickerModal({
+  visible,
+  onClose,
+  onCamera,
+  onGallery,
+}: ImagePickerModalProps) {
+  if (Platform.OS === "ios") return null; // iOS uses native ActionSheet
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>
-        {label}
-        {required && <Text style={styles.requiredAsterisk}> *</Text>}
-      </Text>
-
-      <View style={styles.row}>
-        {segments.map((seg, index) => (
-          <TextInput
-            key={index}
-            ref={(el) => {
-              inputRefs.current[index] = el;
-            }}
-            style={[
-              styles.inputBox,
-              { flex: seg.length },
-              !!error && styles.errorInput,
-              (disabled || seg.type === "fixed") && styles.disabledInput,
-            ]}
-            value={chunks[index]}
-            onChangeText={(text) => handleChange(text, index)}
-            onKeyPress={(e) => handleKeyPress(e, index)}
-            keyboardType={seg.type === "numeric" ? "number-pad" : "default"}
-            maxLength={seg.length}
-            autoCapitalize={seg.type === "alpha" ? "characters" : "none"}
-            editable={!disabled && seg.type !== "fixed"}
-            textAlign="center"
-            placeholderTextColor={colors.border}
-            returnKeyType={
-              index === lastEditableIndex ? returnKeyType : "next"
-            }
-            onSubmitEditing={() => handleSubmitEditing(index)}
-            submitBehavior={
-              (index === lastEditableIndex ? returnKeyType === "done" : false) ? "blurAndSubmit" : "submit"
-            }
-          />
-        ))}
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.bottomSheet}>
+          <Text style={styles.sheetTitle}>Upload Document</Text>
+          <Pressable
+            style={styles.sheetButton}
+            android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+            onPress={onCamera}
+          >
+            <Text style={styles.sheetButtonText}>Take Photo</Text>
+          </Pressable>
+          <Pressable
+            style={styles.sheetButton}
+            android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+            onPress={onGallery}
+          >
+            <Text style={styles.sheetButtonText}>Choose from Gallery</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.sheetButton, styles.sheetCancelButton]}
+            android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+            onPress={onClose}
+          >
+            <Text style={[styles.sheetButtonText, styles.sheetCancelText]}>
+              Cancel
+            </Text>
+          </Pressable>
+        </View>
       </View>
-
-      {!!error && <Text style={styles.errorText}>{error}</Text>}
-    </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: spacing.md },
-  label: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
-    marginBottom: spacing.xs,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
   },
-  requiredAsterisk: { color: colors.error },
-  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  inputBox: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
+  bottomSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: spacing.lg,
+    paddingBottom: spacing["2xl"],
+  },
+  sheetTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.md,
+    textAlign: "center",
+  },
+  sheetButton: {
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.background,
+  },
+  sheetButtonText: {
     fontSize: typography.fontSize.md,
     color: colors.text,
-    backgroundColor: colors.surface,
-    minHeight: 48,
-    minWidth: 36,
+    textAlign: "center",
+    fontWeight: typography.fontWeight.medium,
   },
-  disabledInput: {
-    backgroundColor: colors.background,
-    color: colors.textSecondary,
-  },
-  errorInput: { borderColor: colors.error },
-  errorText: {
+  sheetCancelButton: { borderBottomWidth: 0, marginTop: spacing.sm },
+  sheetCancelText: {
     color: colors.error,
-    fontSize: typography.fontSize.xs,
-    marginTop: spacing.xs,
+    fontWeight: typography.fontWeight.bold,
   },
 });
