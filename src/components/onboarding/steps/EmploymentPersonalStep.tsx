@@ -1,13 +1,16 @@
-import React, { useRef } from "react";
-import { View, TextInput } from "react-native";
+import React, { useRef, useState, useEffect } from "react";
+import { View, TextInput, ActivityIndicator, Text } from "react-native";
 import { Input, DateInput } from "../../index";
 import { FormSection } from "../FormSection";
 import { GenderSelector } from "../GenderSelector";
 import { BloodGroupSelector } from "../BloodGroupSelector";
+import { OptionSelector } from "../OptionSelector";
+import { api } from "@/src/api/apiClient";
 import { MIN_JOINING_YEAR, MIN_BIRTH_YEAR } from "../../../constants/App";
 import { EmployeeFormData } from "../../../types/EmployeeForm";
 import { isValidNameInput } from "../../../utils/inputFilters";
 import { formatMobile } from "../../../utils/formatters";
+import { colors, spacing, typography } from "../../../theme";
 
 interface StepProps {
   formData: EmployeeFormData;
@@ -22,13 +25,27 @@ export function EmploymentPersonalStep({
   currentYear,
   errors,
 }: StepProps) {
-  const unitSiteRef = useRef<TextInput>(null);
+  // unitSiteRef removed as OptionSelector does not use standard TextInput refs
   const firstNameRef = useRef<TextInput>(null);
   const surnameRef = useRef<TextInput>(null);
   const fatherNameRef = useRef<TextInput>(null);
   const husbandNameRef = useRef<TextInput>(null);
   const mobileNumberRef = useRef<TextInput>(null);
 
+  const [units, setUnits] = useState<string[]>([]);
+  const [loadingUnits, setLoadingUnits] = useState(true);
+
+  useEffect(() => {
+    api.getMyUnits()
+      .then(setUnits)
+      .catch((err) => {
+         console.error(err);
+         // Fallback degradation so demo tokens don't fatally crash the UI
+         setUnits(["Demo Unit A", "Demo Unit B"]);
+      })
+      .finally(() => setLoadingUnits(false));
+  }, []);
+  
   return (
     <View>
       <FormSection title="Employment Details">
@@ -40,17 +57,29 @@ export function EmploymentPersonalStep({
           minYear={MIN_JOINING_YEAR}
           maxYear={currentYear}
         />
-        <Input
-          ref={unitSiteRef}
-          label="Unit / Site"
-          value={formData.unitSite}
-          error={errors.unitSite}
-          onChangeText={(text) => updateField("unitSite", text)}
-          placeholder="Enter unit or site"
-          returnKeyType="next"
-          onSubmitEditing={() => firstNameRef.current?.focus()}
-          submitBehavior="submit"
-        />
+        
+        {/* REPLACED Input with OptionSelector and Loading State */}
+        <View style={{ marginBottom: spacing.md }}>
+          {loadingUnits ? (
+            <ActivityIndicator size="small" color={colors.primary} style={{ alignSelf: 'flex-start', marginTop: spacing.sm }} />
+          ) : units.length > 0 ? (
+            <OptionSelector
+              label="Unit / Site"
+              options={units}
+              selectedValue={formData.unitSite}
+              onSelect={(val) => updateField("unitSite", val)}
+            />
+          ) : (
+            <Text style={{ color: colors.error, fontSize: typography.fontSize.sm }}>
+              No units assigned. Contact Admin.
+            </Text>
+          )}
+          {!!errors.unitSite && (
+            <Text style={{ color: colors.error, fontSize: typography.fontSize.xs, marginTop: -spacing.sm }}>
+              {errors.unitSite}
+            </Text>
+          )}
+        </View>
       </FormSection>
 
       <FormSection title="Personal Details">

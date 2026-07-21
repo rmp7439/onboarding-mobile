@@ -7,15 +7,15 @@ import { api } from "../../src/api/apiClient";
 import { Session } from "../../src/utils/Session";
 import { lightImpact, success, error as errorHaptic } from "../../src/utils/haptics";
 
-export default function OTPScreen() {
+export default function PasswordScreen() { // Renamed component internally
   const router = useRouter();
   const { mobile } = useLocalSearchParams<{ mobile: string }>();
   
-  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const isCorrect = otp.length === 6;
+  const isCorrect = password.length >= 6; // Validates password length instead of 6-digit OTP
 
   const handleVerify = async () => {
     if (!isCorrect || isLoading) return; 
@@ -25,12 +25,16 @@ export default function OTPScreen() {
     setErrorMsg(null);
     
     try {
-      const data = await api.employeeLogin(mobile || "9876543210", otp);
-      await Session.saveEmployeeSession(data);
+      const data = await api.userLogin(mobile || "9876543210", password);
+      await Session.saveEmployeeSession({
+        employeeId: data.user.id, // Safely mapped to maintain Session.ts backward compatibility
+        mobile: data.user.mobile,
+        token: data.token
+      });
       success();
       router.replace("/(onboarding)/home");
     } catch (err: unknown) {
-      if (mobile === "9876543210" && otp === "123456") {
+      if (mobile === "9876543210" && password === "password123") {
         await Session.saveEmployeeSession({ 
           employeeId: "demo-id", 
           mobile: "9876543210", 
@@ -40,7 +44,7 @@ export default function OTPScreen() {
         router.replace("/(onboarding)/home");
       } else {
         errorHaptic();
-        const message = err instanceof Error ? err.message : "Invalid OTP. Please try again.";
+        const message = err instanceof Error ? err.message : "Invalid credentials. Please try again.";
         setErrorMsg(message);
       }
     } finally {
@@ -51,18 +55,17 @@ export default function OTPScreen() {
   return (
     <Screen style={styles.container}>
       <View style={styles.content}>
-        <SectionTitle title="Verify OTP" style={styles.header} />
+        <SectionTitle title="Enter Password" style={styles.header} />
         <Card style={styles.card}>
           <TextInput
             style={[styles.input, !!errorMsg && styles.inputError]}
-            value={otp}
+            value={password}
             onChangeText={(text) => {
-              setOtp(text);
+              setPassword(text);
               if (errorMsg) setErrorMsg(null);
             }}
-            placeholder="Enter OTP"
-            keyboardType="numeric"
-            maxLength={6}
+            placeholder="Password"
+            secureTextEntry
             placeholderTextColor={colors.textSecondary}
             returnKeyType="done"
             onSubmitEditing={handleVerify}
@@ -73,7 +76,7 @@ export default function OTPScreen() {
       </View>
       <View style={styles.footer}>
         <Button
-          title="Verify & Proceed"
+          title="Sign In"
           onPress={handleVerify}
           disabled={!isCorrect || isLoading}
           loading={isLoading}
@@ -98,8 +101,6 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.lg,
     color: colors.text,
     backgroundColor: colors.surface,
-    textAlign: "center",
-    letterSpacing: 4,
   },
   inputError: { borderColor: colors.error, backgroundColor: "#FFFAFA" },
   errorText: {

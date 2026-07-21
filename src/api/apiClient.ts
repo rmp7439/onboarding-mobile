@@ -41,6 +41,13 @@ async function safeRequest(endpoint: string, options: RequestInit = {}) {
 }
 
 export const api = {
+  userLogin: (mobile: string, password: string) => {
+    return safeRequest("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ mobile, password }),
+    });
+  },
+
   registerEmployee: (employeeData: any) => {
     return safeRequest("/employee/register", {
       method: "POST",
@@ -104,5 +111,9 @@ export const api = {
 
   getEmployeeProfile: (employeeId: string) => {
     return safeRequest(`/employee/profile/${employeeId}`, { method: "GET" });
-  }
+  },
+
+  getMyUnits: () => {
+    return safeRequest("/user/my-units", { method: "GET" });
+  },
 };
