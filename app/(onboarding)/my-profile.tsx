@@ -35,9 +35,29 @@ export default function MyProfileScreen() {
       setIsLoading(true);
       setError(null);
       const data = await api.getMyProfile();
+      
+      if (!data) {
+        setError("Profile unavailable.");
+        return;
+      }
+      
       setProfile(data);
     } catch (err: any) {
-      setError(err.message || "Failed to load profile.");
+      const msg = err.message || "";
+      
+      // 1. Kick unauthenticated users back to login flow
+      if (msg === "401_UNAUTHORIZED" || msg.includes("Invalid or expired token") || msg.includes("Authentication required")) {
+        await Session.clearEmployeeSession();
+        router.replace("/login");
+      } 
+      // 2. Handle missing profiles gracefully
+      else if (msg === "404_NOT_FOUND" || msg.toLowerCase().includes("not found")) {
+        setError("Profile unavailable.");
+      } 
+      // 3. Genuine Network / 5xx error
+      else {
+        setError(msg || "Failed to load profile.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,11 +82,16 @@ export default function MyProfileScreen() {
       <View style={styles.centerContainer}>
         <Text style={styles.errorIcon}>⚠️</Text>
         <Text style={styles.errorText}>{error}</Text>
-        <Button
-          title="Retry"
-          onPress={fetchProfile}
-          style={styles.retryButton}
-        />
+        
+        {/* Only show the retry button if it's a recoverable failure (i.e. not a 404) */}
+        {error !== "Profile unavailable." && (
+          <Button
+            title="Retry"
+            onPress={fetchProfile}
+            style={styles.retryButton}
+          />
+        )}
+        
         <Button
           title="Back to Dashboard"
           variant="outline"

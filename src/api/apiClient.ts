@@ -21,13 +21,29 @@ async function safeRequest(endpoint: string, options: RequestInit = {}) {
     });
     
     let result;
-    try {
-      result = await response.json();
-    } catch (e) {
-      throw new Error("Invalid response from server. Please try again.");
+    const contentType = response.headers.get("content-type");
+    
+    // Safely attempt JSON parsing only if the server explicitly returned JSON
+    if (contentType && contentType.includes("application/json")) {
+      try {
+        result = await response.json();
+      } catch (e) {
+        throw new Error("Invalid response from server. Please try again.");
+      }
+    } else {
+      // Gracefully map common non-JSON HTTP errors (like Proxy/HTML fallbacks)
+      if (response.status === 401) throw new Error("401_UNAUTHORIZED");
+      if (response.status === 404) throw new Error("404_NOT_FOUND");
+      if (!response.ok) throw new Error(`Server error: ${response.status}`);
+      
+      throw new Error("Invalid response format from server.");
     }
     
     if (!response.ok) {
+      // Elevate strict authentication/availability statuses to allow frontend routing
+      if (response.status === 401) throw new Error("401_UNAUTHORIZED");
+      if (response.status === 404) throw new Error("404_NOT_FOUND");
+      
       throw new Error(result.error || "An unexpected error occurred.");
     }
     
@@ -55,7 +71,6 @@ export const api = {
     });
   },
 
-  // NEW: Update existing employee via PUT
   updateEmployee: (id: string, employeeData: any) => {
     return safeRequest(`/employee/${id}`, {
       method: "PUT",
@@ -117,11 +132,11 @@ export const api = {
     return safeRequest("/user/my-units", { method: "GET" });
   },
 
-  getMyApplications: () => {
-    return safeRequest("/employee/my-applications", { method: "GET" });
-  },
-
   getMyProfile: () => {
     return safeRequest("/user/me", { method: "GET" });
+  },
+  
+  getMyApplications: () => {
+    return safeRequest("/employee/my-applications", { method: "GET" });
   },
 };
