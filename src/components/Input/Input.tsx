@@ -1,15 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TextInputProps,
   StyleSheet,
+  TouchableOpacity,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, typography } from "../../theme";
 
 export interface InputProps extends TextInputProps {
-  label: string;
+  label?: string;
   error?: string;
   required?: boolean;
   ref?: React.Ref<TextInput>;
@@ -22,29 +24,54 @@ export function Input({
   style,
   editable = true,
   multiline,
+  secureTextEntry,
   ref,
   ...props
 }: InputProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = secureTextEntry !== undefined && secureTextEntry !== false;
+  const currentSecureEntry = isPassword ? !showPassword : false;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>
-        {label}
-        {required && <Text style={styles.requiredAsterisk}> *</Text>}
-      </Text>
-      <TextInput
-        ref={ref}
-        style={[
-          styles.input,
-          multiline && styles.multilineInput,
-          !editable && styles.disabledInput,
-          !!error && styles.errorInput,
-          style,
-        ]}
-        placeholderTextColor={colors.textSecondary}
-        editable={editable}
-        multiline={multiline}
-        {...props}
-      />
+      {!!label && (
+        <Text style={styles.label}>
+          {label}
+          {required && <Text style={styles.requiredAsterisk}> *</Text>}
+        </Text>
+      )}
+      <View style={styles.inputWrapper}>
+        <TextInput
+          ref={ref}
+          style={[
+            styles.input,
+            multiline && styles.multilineInput,
+            !editable && styles.disabledInput,
+            !!error && styles.errorInput,
+            isPassword && styles.passwordInput,
+            style,
+          ]}
+          placeholderTextColor={colors.textSecondary}
+          editable={editable}
+          multiline={multiline}
+          secureTextEntry={currentSecureEntry}
+          {...props}
+        />
+        {isPassword && (
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setShowPassword(!showPassword)}
+            accessibilityRole="button"
+            accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off" : "eye"}
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
       {!!error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -59,7 +86,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   requiredAsterisk: { color: colors.error },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   input: {
+    flex: 1,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
@@ -69,6 +101,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.surface,
     minHeight: 48,
+  },
+  passwordInput: {
+    paddingRight: spacing.xl + spacing.sm,
   },
   multilineInput: { minHeight: 100, textAlignVertical: "top" },
   disabledInput: {
@@ -80,5 +115,11 @@ const styles = StyleSheet.create({
     color: colors.error,
     fontSize: typography.fontSize.xs,
     marginTop: spacing.xs,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: spacing.md,
+    height: '100%',
+    justifyContent: 'center',
   },
 });
