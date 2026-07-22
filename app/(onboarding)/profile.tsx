@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useRouter, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
 import { api } from "../../src/api/apiClient";
@@ -48,10 +48,13 @@ interface EmployeeProfile {
   emergencyRelation?: string;
   emergencyPhone?: string;
   documents?: { id: string; type: string; originalFilename: string }[];
+  uploadedAt?: string;
+  updatedAt?: string;
 }
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { id: paramId } = useLocalSearchParams<{ id?: string }>();
   const { updateData } = useOnboarding();
 
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
@@ -59,52 +62,56 @@ export default function ProfileScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isEmpty, setIsEmpty] = useState(false);
 
-  const fetchProfile = useCallback(async (isBackground: boolean = false) => {
-    try {
-      if (!isBackground) {
-        setIsLoading(true);
-        setError(null);
-        setIsEmpty(false);
-      }
-
-      const recentId = await RecentEmployeeStore.getId();
-
-      if (!recentId) {
+  const fetchProfile = useCallback(
+    async (isBackground: boolean = false) => {
+      try {
         if (!isBackground) {
-          setIsEmpty(true);
+          setIsLoading(true);
+          setError(null);
+          setIsEmpty(false);
+        }
+
+        const targetId = paramId || (await RecentEmployeeStore.getId());
+
+        if (!targetId) {
+          if (!isBackground) {
+            setIsEmpty(true);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        const data = await api.getEmployeeProfile(targetId);
+
+        setProfile((prevProfile) => {
+          if (!prevProfile) return data;
+          const hasMeaningfulChange =
+            prevProfile.status !== data.status ||
+            prevProfile.employeeCode !== data.employeeCode ||
+            prevProfile.rejectReason !== data.rejectReason ||
+            prevProfile.correctionRemark !== data.correctionRemark ||
+            prevProfile.updatedAt !== data.updatedAt;
+
+          if (hasMeaningfulChange) {
+            return {
+              ...data,
+              selfieUrl: prevProfile.selfieUrl,
+            };
+          }
+          return prevProfile;
+        });
+      } catch (err: any) {
+        if (!isBackground) {
+          setError(err.message || "Failed to load profile.");
+        }
+      } finally {
+        if (!isBackground) {
           setIsLoading(false);
         }
-        return;
       }
-
-      const data = await api.getEmployeeProfile(recentId);
-
-      setProfile((prevProfile) => {
-        if (!prevProfile) return data;
-        const hasMeaningfulChange =
-          prevProfile.status !== data.status ||
-          prevProfile.employeeCode !== data.employeeCode ||
-          prevProfile.rejectReason !== data.rejectReason ||
-          prevProfile.correctionRemark !== data.correctionRemark;
-
-        if (hasMeaningfulChange) {
-          return {
-            ...data,
-            selfieUrl: prevProfile.selfieUrl,
-          };
-        }
-        return prevProfile;
-      });
-    } catch (err: any) {
-      if (!isBackground) {
-        setError(err.message || "Failed to load profile.");
-      }
-    } finally {
-      if (!isBackground) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
+    },
+    [paramId],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -156,27 +163,28 @@ export default function ProfileScreen() {
       day: "2-digit",
       month: "short",
       year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const handleEditResubmit = () => {
     if (!profile) return;
     lightImpact();
-    
-    // Exactly matches the Home Dashboard full-mapping logic
+
     updateData({
       isEditMode: true,
       editEmployeeId: profile.id,
       employment: {
         joiningDate: formatDateForForm(profile.joiningDate),
-        unit: profile.unit || "", 
+        unit: profile.unit || "",
       },
       personal: {
         firstName: profile.firstName || "",
         surname: profile.surname || "",
         fatherName: profile.fatherName || "",
         husbandName: profile.husbandName || "",
-        gender: profile.gender === 'FEMALE' ? 'Female' : 'Male',
+        gender: profile.gender === "FEMALE" ? "Female" : "Male",
         dob: formatDateForForm(profile.dateOfBirth || ""),
         mobile: profile.mobile || "",
         bloodGroup: mapBloodGroupFromBackend(profile.bloodGroup),
@@ -206,8 +214,9 @@ export default function ProfileScreen() {
         relation: profile.emergencyRelation || "",
         mobile: profile.emergencyPhone || "",
       },
-      selfieUri: profile.selfieUrl || profile.selfieFilename ? "EXISTING" : null,
-      existingDocuments: profile.documents?.map((d: any) => d.type) || []
+      selfieUri:
+        profile.selfieUrl || profile.selfieFilename ? "EXISTING" : null,
+      existingDocuments: profile.documents?.map((d: any) => d.type) || [],
     });
     router.push("/(onboarding)/new-guard/employee-details");
   };
@@ -256,6 +265,8 @@ export default function ProfileScreen() {
 
   const badgeStyle = getStatusBadgeStyle(profile.status);
   const isReturned = profile.status.toUpperCase() === "RETURNED_FOR_CORRECTION";
+  const isPending = profile.status.toUpperCase() === "PENDING";
+  const canEdit = isReturned || isPending;
 
   return (
     <Screen style={styles.container}>
@@ -296,7 +307,9 @@ export default function ProfileScreen() {
       {isReturned && profile.correctionRemark ? (
         <Card style={[styles.detailsCard, styles.returnedCard]}>
           <View style={styles.reasonContainer}>
-            <Text style={styles.reasonLabel}>Reason : {profile.correctionRemark}</Text>
+            <Text style={styles.reasonLabel}>
+              Reason : {profile.correctionRemark}
+            </Text>
           </View>
         </Card>
       ) : profile.status.toUpperCase() === "REJECTED" &&
@@ -316,7 +329,7 @@ export default function ProfileScreen() {
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Joining Date</Text>
           <Text style={styles.detailValue}>
-            {formatDate(profile.joiningDate)}
+            {formatDateForForm(profile.joiningDate)}
           </Text>
         </View>
         <View style={styles.divider} />
@@ -331,16 +344,32 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
+      <Card style={styles.detailsCard}>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Created On</Text>
+          <Text style={styles.detailValue}>
+            {profile.uploadedAt ? formatDate(profile.uploadedAt) : "N/A"}
+          </Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Last Updated</Text>
+          <Text style={styles.detailValue}>
+            {profile.updatedAt ? formatDate(profile.updatedAt) : "N/A"}
+          </Text>
+        </View>
+      </Card>
+
       <View style={styles.footer}>
-        {isReturned && (
+        {canEdit && (
           <Button
-            title="Edit & Resubmit"
+            title={isReturned ? "Edit & Resubmit" : "Edit / Continue"}
             onPress={handleEditResubmit}
             style={styles.primaryButton}
           />
         )}
         <Button
-          title="Back to Dashboard"
+          title="Back"
           variant="outline"
           onPress={() => {
             lightImpact();

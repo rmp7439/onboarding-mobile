@@ -116,4 +116,8 @@ export const api = {
   getMyUnits: () => {
     return safeRequest("/user/my-units", { method: "GET" });
   },
+
+  getMyApplications: () => {
+    return safeRequest("/employee/my-applications", { method: "GET" });
+  }
 };
