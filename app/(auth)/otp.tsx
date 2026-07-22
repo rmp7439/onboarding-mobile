@@ -12,7 +12,6 @@ import {
 } from "../../src/utils/haptics";
 
 export default function PasswordScreen() {
-  // Renamed component internally
   const router = useRouter();
   const { mobile } = useLocalSearchParams<{ mobile: string }>();
 
@@ -20,7 +19,7 @@ export default function PasswordScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const isCorrect = password.length >= 6; // Validates password length instead of 6-digit OTP
+  const isCorrect = password.length >= 6;
 
   const handleVerify = async () => {
     if (!isCorrect || isLoading) return;
@@ -30,21 +29,22 @@ export default function PasswordScreen() {
     setErrorMsg(null);
 
     try {
-      const data = await api.userLogin(mobile || "9876543210", password);
+      // Removed the hardcoded fallback "9876543210"
+      const data = await api.userLogin(mobile, password);
+
       await Session.saveEmployeeSession({
-        employeeId: data.user.id, // Safely mapped to maintain Session.ts backward compatibility
+        employeeId: data.user.id,
         mobile: data.user.mobile,
         token: data.token,
       });
+
       success();
       router.replace("/(onboarding)/home");
     } catch (err: unknown) {
+      // Removed the demo-token insertion backdoor entirely
       errorHaptic();
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Invalid credentials. Please try again.";
-      setErrorMsg(message);
+      // Use the generic requested message
+      setErrorMsg("Invalid mobile number or password.");
     } finally {
       setIsLoading(false);
     }
