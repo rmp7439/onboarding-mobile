@@ -9,6 +9,7 @@ export default function OnboardingLayout() {
         <Stack.Screen name="new-guard" />
         <Stack.Screen name="profile" />
         <Stack.Screen name="my-applications" />
+        <Stack.Screen name="my-profile" />
       </Stack>
     </OnboardingProvider>
   );

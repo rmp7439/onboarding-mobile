@@ -119,5 +119,9 @@ export const api = {
 
   getMyApplications: () => {
     return safeRequest("/employee/my-applications", { method: "GET" });
-  }
+  },
+
+  getMyProfile: () => {
+    return safeRequest("/user/me", { method: "GET" });
+  },
 };
