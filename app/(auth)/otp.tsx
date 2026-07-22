@@ -5,12 +5,17 @@ import { Screen, Card, SectionTitle, Button } from "../../src/components";
 import { colors, spacing, typography, radius } from "../../src/theme";
 import { api } from "../../src/api/apiClient";
 import { Session } from "../../src/utils/Session";
-import { lightImpact, success, error as errorHaptic } from "../../src/utils/haptics";
+import {
+  lightImpact,
+  success,
+  error as errorHaptic,
+} from "../../src/utils/haptics";
 
-export default function PasswordScreen() { // Renamed component internally
+export default function PasswordScreen() {
+  // Renamed component internally
   const router = useRouter();
   const { mobile } = useLocalSearchParams<{ mobile: string }>();
-  
+
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -18,35 +23,28 @@ export default function PasswordScreen() { // Renamed component internally
   const isCorrect = password.length >= 6; // Validates password length instead of 6-digit OTP
 
   const handleVerify = async () => {
-    if (!isCorrect || isLoading) return; 
-    
+    if (!isCorrect || isLoading) return;
+
     lightImpact();
     setIsLoading(true);
     setErrorMsg(null);
-    
+
     try {
       const data = await api.userLogin(mobile || "9876543210", password);
       await Session.saveEmployeeSession({
         employeeId: data.user.id, // Safely mapped to maintain Session.ts backward compatibility
         mobile: data.user.mobile,
-        token: data.token
+        token: data.token,
       });
       success();
       router.replace("/(onboarding)/home");
     } catch (err: unknown) {
-      if (mobile === "9876543210" && password === "password123") {
-        await Session.saveEmployeeSession({ 
-          employeeId: "demo-id", 
-          mobile: "9876543210", 
-          token: "demo-token" 
-        });
-        success();
-        router.replace("/(onboarding)/home");
-      } else {
-        errorHaptic();
-        const message = err instanceof Error ? err.message : "Invalid credentials. Please try again.";
-        setErrorMsg(message);
-      }
+      errorHaptic();
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Invalid credentials. Please try again.";
+      setErrorMsg(message);
     } finally {
       setIsLoading(false);
     }
