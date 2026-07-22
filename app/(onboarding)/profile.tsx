@@ -7,10 +7,8 @@ import { colors, radius, spacing, typography } from "../../src/theme";
 import { RecentEmployeeStore } from "../../src/utils/RecentEmployeeStore";
 import { lightImpact } from "../../src/utils/haptics";
 import { useOnboarding } from "../../src/context/OnboardingContext";
-import {
-  formatDateForForm,
-  mapBloodGroupFromBackend,
-} from "../../src/utils/dataMappers";
+import { formatDateForForm } from "../../src/utils/dataMappers";
+import { startEditingApplication } from "../../src/utils/editHelper";
 
 interface EmployeeProfile {
   id: string;
@@ -171,54 +169,7 @@ export default function ProfileScreen() {
   const handleEditResubmit = () => {
     if (!profile) return;
     lightImpact();
-
-    updateData({
-      isEditMode: true,
-      editEmployeeId: profile.id,
-      employment: {
-        joiningDate: formatDateForForm(profile.joiningDate),
-        unit: profile.unit || "",
-      },
-      personal: {
-        firstName: profile.firstName || "",
-        surname: profile.surname || "",
-        fatherName: profile.fatherName || "",
-        husbandName: profile.husbandName || "",
-        gender: profile.gender === "FEMALE" ? "Female" : "Male",
-        dob: formatDateForForm(profile.dateOfBirth || ""),
-        mobile: profile.mobile || "",
-        bloodGroup: mapBloodGroupFromBackend(profile.bloodGroup),
-      },
-      identity: {
-        aadhaar: profile.aadhaar || "",
-        pan: profile.pan || "",
-        uan: profile.uan || "",
-        esic: profile.esic || "",
-      },
-      address: {
-        permanent: profile.permanentAddress || "",
-        current: profile.currentAddress || "",
-        city: profile.city || "",
-        state: profile.state || "",
-        pinCode: profile.pinCode || "",
-      },
-      bank: {
-        bankName: profile.bankName || "",
-        accountNumber: profile.accountNumber || "",
-        ifsc: profile.ifsc || "",
-        branch: profile.branch || "",
-        micr: profile.micr || "",
-      },
-      emergencyContact: {
-        name: profile.emergencyName || "",
-        relation: profile.emergencyRelation || "",
-        mobile: profile.emergencyPhone || "",
-      },
-      selfieUri:
-        profile.selfieUrl || profile.selfieFilename ? "EXISTING" : null,
-      existingDocuments: profile.documents?.map((d: any) => d.type) || [],
-    });
-    router.push("/(onboarding)/new-guard/employee-details");
+    startEditingApplication(profile, updateData, router);
   };
 
   if (isLoading && !profile) {
@@ -265,8 +216,10 @@ export default function ProfileScreen() {
 
   const badgeStyle = getStatusBadgeStyle(profile.status);
   const isReturned = profile.status.toUpperCase() === "RETURNED_FOR_CORRECTION";
-  const isPending = profile.status.toUpperCase() === "PENDING";
-  const canEdit = isReturned || isPending;
+  const isRejected = profile.status.toUpperCase() === "REJECTED";
+
+  // Requirement: Display Continue Editing button ONLY for RETURNED_FOR_CORRECTION or REJECTED
+  const canEdit = isReturned || isRejected;
 
   return (
     <Screen style={styles.container}>
@@ -363,7 +316,7 @@ export default function ProfileScreen() {
       <View style={styles.footer}>
         {canEdit && (
           <Button
-            title={isReturned ? "Edit & Resubmit" : "Edit / Continue"}
+            title="Continue Editing"
             onPress={handleEditResubmit}
             style={styles.primaryButton}
           />

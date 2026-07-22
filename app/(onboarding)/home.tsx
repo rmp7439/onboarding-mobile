@@ -40,7 +40,7 @@ export default function HomeScreen() {
   // Adjusted height for 4 menu items (64px each = 256px total)
   const contentHeight = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 256],
+    outputRange: [0, 320],
   });
 
   const iconRotation = animation.interpolate({
@@ -93,6 +93,20 @@ export default function HomeScreen() {
             >
               <Text style={styles.menuItemIcon}>📋</Text>
               <Text style={styles.menuItemText}>My Applications</Text>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.menuItem,
+                pressed && styles.menuItemPressed,
+              ]}
+              onPress={() => {
+                lightImpact();
+                router.push("/(onboarding)/edit-applications");
+              }}
+            >
+              <Text style={styles.menuItemIcon}>✏️</Text>
+              <Text style={styles.menuItemText}>Edit Applications</Text>
             </Pressable>
 
             <Pressable
