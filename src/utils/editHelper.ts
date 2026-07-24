@@ -38,6 +38,10 @@ export const startEditingApplication = (
       city: profile.city || "",
       state: profile.state || "",
       pinCode: profile.pinCode || "",
+      permanentPoliceStation: profile.permanentPoliceStation || "", 
+      currentCity: profile.currentCity || "",                       
+      currentState: profile.currentState || "",                     
+      currentPinCode: profile.currentPinCode || "",                 
     },
     bank: {
       bankName: profile.bankName || "",

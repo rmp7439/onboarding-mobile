@@ -40,6 +40,10 @@ interface EmployeeProfile {
   city?: string;
   state?: string;
   pinCode?: string;
+  permanentPoliceStation?: string;
+  currentCity?: string;
+  currentState?: string;
+  currentPinCode?: string;
   bankName?: string;
   accountNumber?: string;
   ifsc?: string;
@@ -302,12 +306,88 @@ export default function ProfileScreen() {
         <View style={styles.divider} />
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Marital Status</Text>
-          <Text style={styles.detailValue}>{profile.maritalStatus ? profile.maritalStatus.charAt(0).toUpperCase() + profile.maritalStatus.slice(1).toLowerCase() : "N/A"}</Text>
+          <Text style={styles.detailValue}>
+            {profile.maritalStatus
+              ? profile.maritalStatus.charAt(0).toUpperCase() +
+                profile.maritalStatus.slice(1).toLowerCase()
+              : "N/A"}
+          </Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Highest Education</Text>
-          <Text style={styles.detailValue}>{profile.education ? profile.education.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()) : "N/A"}</Text>
+          <Text style={styles.detailValue}>
+            {profile.education
+              ? profile.education
+                  .replace(/_/g, " ")
+                  .replace(
+                    /\w\S*/g,
+                    (txt) =>
+                      txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(),
+                  )
+              : "N/A"}
+          </Text>
+        </View>
+      </Card>
+
+      {/* Permanent Address Card */}
+      <Card style={styles.detailsCard}>
+        <SectionTitle
+          title="Permanent Address"
+          style={{ marginBottom: 12, marginTop: 0 }}
+        />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Address</Text>
+          <Text style={styles.detailValue}>
+            {profile.permanentAddress || "N/A"}
+          </Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>City / State</Text>
+          <Text style={styles.detailValue}>
+            {profile.city}, {profile.state}
+          </Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>PIN Code</Text>
+          <Text style={styles.detailValue}>{profile.pinCode || "N/A"}</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Police Station</Text>
+          <Text style={styles.detailValue}>
+            {profile.permanentPoliceStation || "N/A"}
+          </Text>
+        </View>
+      </Card>
+
+      {/* Current Address Card */}
+      <Card style={styles.detailsCard}>
+        <SectionTitle
+          title="Current Address"
+          style={{ marginBottom: 12, marginTop: 0 }}
+        />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Address</Text>
+          <Text style={styles.detailValue}>
+            {profile.currentAddress || "N/A"}
+          </Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>City / State</Text>
+          <Text style={styles.detailValue}>
+            {profile.currentCity || "N/A"}, {profile.currentState || "N/A"}
+          </Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>PIN Code</Text>
+          <Text style={styles.detailValue}>
+            {profile.currentPinCode || "N/A"}
+          </Text>
         </View>
       </Card>
 

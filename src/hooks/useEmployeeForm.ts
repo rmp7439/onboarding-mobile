@@ -28,6 +28,10 @@ export function useEmployeeForm() {
     city: data.address.city,
     state: data.address.state,
     pinCode: data.address.pinCode,
+    permanentPoliceStation: data.address.permanentPoliceStation,
+    currentCity: data.address.currentCity,
+    currentState: data.address.currentState,
+    currentPinCode: data.address.currentPinCode,
     bankName: data.bank.bankName,
     accountNumber: data.bank.accountNumber,
     ifscCode: data.bank.ifsc,
@@ -97,7 +101,11 @@ export function useEmployeeForm() {
         );
         check("bloodGroup", formData.bloodGroup.length > 0, "Required");
         check("maritalStatus", formData.maritalStatus.length > 0, "Required");
-        check("highestEducation", formData.highestEducation.length > 0, "Required");
+        check(
+          "highestEducation",
+          formData.highestEducation.length > 0,
+          "Required",
+        );
       } else if (step === 2) {
         check(
           "aadhaarNumber",
@@ -105,15 +113,31 @@ export function useEmployeeForm() {
           "Required",
         );
       } else if (step === 3) {
+        // Permanent Validation
         check(
           "permanentAddress",
           formData.permanentAddress.length > 0,
           "Required",
         );
-        check("currentAddress", formData.currentAddress.length > 0, "Required");
         check("city", formData.city.length > 0, "Required");
         check("state", formData.state.length > 0, "Required");
         check("pinCode", formData.pinCode.length === 6, "Must be 6 digits");
+        check(
+          "permanentPoliceStation",
+          formData.permanentPoliceStation.length > 0,
+          "Required",
+        ); 
+
+        // Current Validation
+        check("currentAddress", formData.currentAddress.length > 0, "Required");
+        check("currentCity", formData.currentCity.length > 0, "Required"); 
+        check("currentState", formData.currentState.length > 0, "Required"); 
+        check(
+          "currentPinCode",
+          formData.currentPinCode.length === 6,
+          "Must be 6 digits",
+        ); 
+    
         check("bankName", formData.bankName.length > 0, "Required");
         check(
           "accountNumber",

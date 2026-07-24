@@ -25,6 +25,10 @@ export interface EmployeeFormData {
   city: string;
   state: string;
   pinCode: string;
+  permanentPoliceStation: string; 
+  currentCity: string;            
+  currentState: string;           
+  currentPinCode: string;         
   // Bank Details
   bankName: string;
   accountNumber: string;

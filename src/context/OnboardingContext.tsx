@@ -37,6 +37,10 @@ export interface OnboardingData {
     city: string;
     state: string;
     pinCode: string;
+    permanentPoliceStation: string;
+    currentCity: string;
+    currentState: string;
+    currentPinCode: string; // <-- Added
   };
   bank: {
     bankName: string;
@@ -76,7 +80,17 @@ const INITIAL_DATA: OnboardingData = {
     highestEducation: "",
   },
   identity: { aadhaar: "", pan: "", uan: "", esic: "", drivingLicence: "" },
-  address: { permanent: "", current: "", city: "", state: "", pinCode: "" },
+  address: {
+    permanent: "",
+    current: "",
+    city: "",
+    state: "",
+    pinCode: "",
+    permanentPoliceStation: "",
+    currentCity: "",
+    currentState: "",
+    currentPinCode: "", // <-- Added
+  },
   bank: { bankName: "", accountNumber: "", ifsc: "", branch: "", micr: "" },
   emergencyContact: { name: "", relation: "", mobile: "" },
 

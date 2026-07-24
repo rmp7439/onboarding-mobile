@@ -3,11 +3,7 @@ import { View, TextInput } from "react-native";
 import { Input, SegmentedInput, SearchableDropdown } from "../../index";
 import { FormSection } from "../FormSection";
 import { EmployeeFormData } from "../../../types/EmployeeForm";
-import {
-  isValidNameInput,
-  isValidAddressInput,
-  allowOnlyNumbers,
-} from "../../../utils/inputFilters";
+import { isValidNameInput, isValidAddressInput, allowOnlyNumbers } from "../../../utils/inputFilters";
 import { useIndianLocations } from "../../../hooks/useIndianLocations";
 
 interface StepProps {
@@ -17,95 +13,115 @@ interface StepProps {
   errors: Partial<Record<keyof EmployeeFormData, string>>;
 }
 
-export function AddressBankStep({
-  formData,
-  updateField,
-  onNextStep,
-  errors,
-}: StepProps) {
-  const currAddressRef = useRef<TextInput>(null);
-  const stateRef = useRef<any>(null);
-  const cityRef = useRef<any>(null);
-  const pinCodeRef = useRef<TextInput>(null);
+export function AddressBankStep({ formData, updateField, onNextStep, errors }: StepProps) {
   const bankNameRef = useRef<TextInput>(null);
   const accNumRef = useRef<any>(null);
   const ifscRef = useRef<any>(null);
   const branchRef = useRef<TextInput>(null);
   const micrRef = useRef<any>(null);
+  
+  // Use two separate instances for Indian locations
+  const { stateOptions: permStateOptions, cityOptions: permCityOptions } = useIndianLocations(formData.state);
+  const { stateOptions: currStateOptions, cityOptions: currCityOptions } = useIndianLocations(formData.currentState);
 
-  // Consume the clean geographical API hook
-  const { stateOptions, cityOptions } = useIndianLocations(formData.state);
-
-  const handleStateChange = (newState: string) => {
+  const handlePermStateChange = (newState: string) => {
     if (newState !== formData.state) {
       updateField("state", newState);
-      updateField("city", ""); // Automatically clear city when state changes
+      updateField("city", ""); 
+    }
+  };
+
+  const handleCurrStateChange = (newState: string) => {
+    if (newState !== formData.currentState) {
+      updateField("currentState", newState);
+      updateField("currentCity", ""); 
     }
   };
 
   return (
     <View>
-      <FormSection title="Address">
+      {/* Permanent Address Section */}
+      <FormSection title="Permanent Address">
         <Input
           label="Permanent Address"
           value={formData.permanentAddress}
           error={errors.permanentAddress}
-          onChangeText={(text) => {
-            if (isValidAddressInput(text))
-              updateField("permanentAddress", text);
-          }}
+          onChangeText={(text) => { if (isValidAddressInput(text)) updateField("permanentAddress", text); }}
           multiline
-          returnKeyType="next"
-          onSubmitEditing={() => currAddressRef.current?.focus()}
-          submitBehavior="submit"
-        />
-        <Input
-          ref={currAddressRef}
-          label="Current Address"
-          value={formData.currentAddress}
-          error={errors.currentAddress}
-          onChangeText={(text) => {
-            if (isValidAddressInput(text)) updateField("currentAddress", text);
-          }}
-          multiline
-          returnKeyType="done"
-          submitBehavior="blurAndSubmit"
         />
 
         <SearchableDropdown
-          ref={stateRef}
           label="State"
           placeholder="Select State"
           value={formData.state}
           error={errors.state}
-          options={stateOptions}
-          onSelect={handleStateChange}
+          options={permStateOptions}
+          onSelect={handlePermStateChange}
         />
 
         <SearchableDropdown
-          ref={cityRef}
           label="City"
           placeholder="Select City"
           value={formData.city}
           error={errors.city}
-          options={cityOptions}
+          options={permCityOptions}
           onSelect={(val) => updateField("city", val)}
           disabled={!formData.state}
         />
 
         <Input
-          ref={pinCodeRef}
           label="PIN Code"
           value={formData.pinCode}
           error={errors.pinCode}
-          onChangeText={(text) =>
-            updateField("pinCode", allowOnlyNumbers(text))
-          }
+          onChangeText={(text) => updateField("pinCode", allowOnlyNumbers(text))}
           keyboardType="numeric"
           maxLength={6}
-          returnKeyType="next"
-          onSubmitEditing={() => bankNameRef.current?.focus()}
-          submitBehavior="submit"
+        />
+
+        <Input
+          label="Police Station"
+          value={formData.permanentPoliceStation}
+          error={errors.permanentPoliceStation}
+          onChangeText={(text) => { if (isValidAddressInput(text)) updateField("permanentPoliceStation", text); }}
+        />
+      </FormSection>
+
+      {/* Current Address Section */}
+      <FormSection title="Current Address">
+        <Input
+          label="Current Address"
+          value={formData.currentAddress}
+          error={errors.currentAddress}
+          onChangeText={(text) => { if (isValidAddressInput(text)) updateField("currentAddress", text); }}
+          multiline
+        />
+
+        <SearchableDropdown
+          label="State"
+          placeholder="Select State"
+          value={formData.currentState}
+          error={errors.currentState}
+          options={currStateOptions}
+          onSelect={handleCurrStateChange}
+        />
+
+        <SearchableDropdown
+          label="City"
+          placeholder="Select City"
+          value={formData.currentCity}
+          error={errors.currentCity}
+          options={currCityOptions}
+          onSelect={(val) => updateField("currentCity", val)}
+          disabled={!formData.currentState}
+        />
+
+        <Input
+          label="PIN Code"
+          value={formData.currentPinCode}
+          error={errors.currentPinCode}
+          onChangeText={(text) => updateField("currentPinCode", allowOnlyNumbers(text))}
+          keyboardType="numeric"
+          maxLength={6}
         />
       </FormSection>
 
