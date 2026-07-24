@@ -196,7 +196,6 @@ export function SegmentedInput({
     <View style={styles.container}>
       <Text style={styles.label}>
         {label}
-        {required && <Text style={styles.requiredAsterisk}> *</Text>}
       </Text>
 
       <View style={styles.row}>
@@ -243,7 +242,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: spacing.xs,
   },
-  requiredAsterisk: { color: colors.error },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   inputBox: {
     borderWidth: 1,

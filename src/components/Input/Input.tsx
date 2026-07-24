@@ -37,7 +37,6 @@ export function Input({
       {!!label && (
         <Text style={styles.label}>
           {label}
-          {required && <Text style={styles.requiredAsterisk}> *</Text>}
         </Text>
       )}
       <View style={styles.inputWrapper}>
@@ -85,7 +84,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: spacing.xs,
   },
-  requiredAsterisk: { color: colors.error },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',

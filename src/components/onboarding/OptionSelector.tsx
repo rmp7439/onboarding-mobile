@@ -15,7 +15,6 @@ export function OptionSelector({ label, options, selectedValue, onSelect, requir
     <View style={styles.selectorContainer}>
       <Text style={styles.selectorLabel}>
         {label}
-        {required && <Text style={{ color: colors.error }}> *</Text>}
       </Text>
       <View style={styles.optionsWrapper}>
         {options.map((opt) => {

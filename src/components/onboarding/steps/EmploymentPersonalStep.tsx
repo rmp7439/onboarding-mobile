@@ -42,11 +42,13 @@ export function EmploymentPersonalStep({
   const [loadingUnits, setLoadingUnits] = useState(true);
 
   useEffect(() => {
-    api.getUnits()
-      .then((data: any) => {
-        setUnits(data);
+    Promise.all([api.getUnits(), api.getMyUnits()])
+      .then(([allUnits, myUnits]) => {
+        const assignedUnits = allUnits.filter((u: any) => myUnits.includes(u.name));
+        setUnits(assignedUnits);
+        
         if (formData.unitSite) {
-          const matched = data.find((u: any) => u.name === formData.unitSite);
+          const matched = assignedUnits.find((u: any) => u.name === formData.unitSite);
           if (matched) {
             updateData({ unitConfig: { requiredFields: matched.requiredFields || [] } });
           }

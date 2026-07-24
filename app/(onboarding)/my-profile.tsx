@@ -105,10 +105,8 @@ export default function MyProfileScreen() {
         <SectionTitle title="My Profile" style={styles.header} />
 
         <Card style={styles.card}>
-          <Text style={styles.cardTitle}>Account Information</Text>
-
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>User ID (Login)</Text>
+            <Text style={styles.detailLabel}>User ID</Text>
             <Text style={styles.detailValue}>{profile.userId}</Text>
           </View>
           <View style={styles.divider} />
@@ -128,7 +126,7 @@ export default function MyProfileScreen() {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Role</Text>
             <Text style={styles.detailValue}>
-              {profile.role === 'USER' ? 'Field Manager' : profile.role}
+              {profile.role === 'USER' ? 'Supervisor' : profile.role}
             </Text>
           </View>
           <View style={styles.divider} />

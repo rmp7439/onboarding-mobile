@@ -179,7 +179,6 @@ export function DateInput({
     <View style={styles.container}>
       <Text style={styles.label}>
         {label}
-        {required && <Text style={styles.requiredAsterisk}> *</Text>}
       </Text>
 
       <View style={styles.row}>
@@ -238,9 +237,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
     color: colors.text,
     marginBottom: spacing.xs,
-  },
-  requiredAsterisk: {
-    color: colors.error,
   },
   row: {
     flexDirection: 'row',

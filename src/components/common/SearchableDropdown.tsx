@@ -20,7 +20,6 @@ export const SearchableDropdown = forwardRef<any, SearchableDropdownProps>(
       <View style={styles.container}>
         <Text style={styles.label}>
           {label}
-          {required && <Text style={styles.requiredAsterisk}> *</Text>}
         </Text>
 
         <Dropdown
@@ -61,7 +60,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: spacing.xs,
   },
-  requiredAsterisk: { color: colors.error },
   dropdown: {
     borderWidth: 1,
     borderColor: colors.border,
