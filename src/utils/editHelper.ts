@@ -44,10 +44,10 @@ export const startEditingApplication = (
       currentPinCode: profile.currentPinCode || "",                 
     },
     bank: {
+      accountHolderName: profile.accountHolderName || "", 
       bankName: profile.bankName || "",
       accountNumber: profile.accountNumber || "",
       ifsc: profile.ifsc || "",
-      branch: profile.branch || "",
       micr: profile.micr || "",
     },
     emergencyContact: {

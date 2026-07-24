@@ -137,4 +137,8 @@ export const api = {
   getMyApplications: () => {
     return safeRequest("/employee/my-applications", { method: "GET" });
   },
+
+  getBanks: () => {
+    return safeRequest("/banks", { method: "GET" });
+  },
 };

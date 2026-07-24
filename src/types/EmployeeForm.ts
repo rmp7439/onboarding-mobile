@@ -30,10 +30,10 @@ export interface EmployeeFormData {
   currentState: string;           
   currentPinCode: string;         
   // Bank Details
+  accountHolderName: string; 
   bankName: string;
   accountNumber: string;
   ifscCode: string;
-  branch: string;
   micrCode: string;
   // Emergency Contact 
   em1Name: string;

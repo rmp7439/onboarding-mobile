@@ -44,6 +44,7 @@ interface EmployeeProfile {
   currentCity?: string;
   currentState?: string;
   currentPinCode?: string;
+  accountHolderName?: string;
   bankName?: string;
   accountNumber?: string;
   ifsc?: string;
@@ -388,6 +389,42 @@ export default function ProfileScreen() {
           <Text style={styles.detailValue}>
             {profile.currentPinCode || "N/A"}
           </Text>
+        </View>
+      </Card>
+
+      {/* Bank Information Card */}
+      <Card style={styles.detailsCard}>
+        <SectionTitle
+          title="Bank Information"
+          style={{ marginBottom: 12, marginTop: 0 }}
+        />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Account Holder Name</Text>
+          <Text style={styles.detailValue}>
+            {profile.accountHolderName || "N/A"}
+          </Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Bank Name</Text>
+          <Text style={styles.detailValue}>{profile.bankName || "N/A"}</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Account Number</Text>
+          <Text style={styles.detailValue}>
+            {profile.accountNumber || "N/A"}
+          </Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>IFSC Code</Text>
+          <Text style={styles.detailValue}>{profile.ifsc || "N/A"}</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>MICR Code</Text>
+          <Text style={styles.detailValue}>{profile.micr || "N/A"}</Text>
         </View>
       </Card>
 

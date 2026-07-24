@@ -32,10 +32,10 @@ export function useEmployeeForm() {
     currentCity: data.address.currentCity,
     currentState: data.address.currentState,
     currentPinCode: data.address.currentPinCode,
+    accountHolderName: data.bank.accountHolderName,
     bankName: data.bank.bankName,
     accountNumber: data.bank.accountNumber,
     ifscCode: data.bank.ifsc,
-    branch: data.bank.branch,
     micrCode: data.bank.micr,
     em1Name: data.emergencyContact.name,
     em1Relation: data.emergencyContact.relation,
@@ -126,31 +126,26 @@ export function useEmployeeForm() {
           "permanentPoliceStation",
           formData.permanentPoliceStation.length > 0,
           "Required",
-        ); 
+        );
 
         // Current Validation
         check("currentAddress", formData.currentAddress.length > 0, "Required");
-        check("currentCity", formData.currentCity.length > 0, "Required"); 
-        check("currentState", formData.currentState.length > 0, "Required"); 
+        check("currentCity", formData.currentCity.length > 0, "Required");
+        check("currentState", formData.currentState.length > 0, "Required");
         check(
           "currentPinCode",
           formData.currentPinCode.length === 6,
           "Must be 6 digits",
+        );
+
+        check(
+          "accountHolderName",
+          formData.accountHolderName.length > 0,
+          "Required",
         ); 
-    
         check("bankName", formData.bankName.length > 0, "Required");
-        check(
-          "accountNumber",
-          formData.accountNumber.length === 16,
-          "Must be 16 digits",
-        );
-        check(
-          "ifscCode",
-          formData.ifscCode.length === 11,
-          "Must be 11 characters",
-        );
-        check("branch", formData.branch.length > 0, "Required");
-        check("micrCode", formData.micrCode.length === 9, "Must be 9 digits");
+        check("accountNumber", formData.accountNumber.length > 0, "Required");
+        check("ifscCode", formData.ifscCode.length > 0, "Required");
       } else if (step === 4) {
         check("em1Name", formData.em1Name.length > 0, "Required");
         check("em1Relation", formData.em1Relation.length > 0, "Required");

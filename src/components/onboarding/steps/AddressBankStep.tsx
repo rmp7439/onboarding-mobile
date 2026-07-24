@@ -1,10 +1,15 @@
-import React, { useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, TextInput } from "react-native";
 import { Input, SegmentedInput, SearchableDropdown } from "../../index";
 import { FormSection } from "../FormSection";
 import { EmployeeFormData } from "../../../types/EmployeeForm";
-import { isValidNameInput, isValidAddressInput, allowOnlyNumbers } from "../../../utils/inputFilters";
+import {
+  isValidNameInput,
+  isValidAddressInput,
+  allowOnlyNumbers,
+} from "../../../utils/inputFilters";
 import { useIndianLocations } from "../../../hooks/useIndianLocations";
+import { api } from "@/src/api/apiClient";
 
 interface StepProps {
   formData: EmployeeFormData;
@@ -13,28 +18,52 @@ interface StepProps {
   errors: Partial<Record<keyof EmployeeFormData, string>>;
 }
 
-export function AddressBankStep({ formData, updateField, onNextStep, errors }: StepProps) {
-  const bankNameRef = useRef<TextInput>(null);
+export function AddressBankStep({
+  formData,
+  updateField,
+  onNextStep,
+  errors,
+}: StepProps) {
+  const accHolderRef = useRef<TextInput>(null);
   const accNumRef = useRef<any>(null);
   const ifscRef = useRef<any>(null);
-  const branchRef = useRef<TextInput>(null);
   const micrRef = useRef<any>(null);
-  
+
   // Use two separate instances for Indian locations
-  const { stateOptions: permStateOptions, cityOptions: permCityOptions } = useIndianLocations(formData.state);
-  const { stateOptions: currStateOptions, cityOptions: currCityOptions } = useIndianLocations(formData.currentState);
+  const { stateOptions: permStateOptions, cityOptions: permCityOptions } =
+    useIndianLocations(formData.state);
+  const { stateOptions: currStateOptions, cityOptions: currCityOptions } =
+    useIndianLocations(formData.currentState);
+
+  const [bankOptions, setBankOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+
+  useEffect(() => {
+    // Fetch banks from Master API
+    api
+      .getBanks()
+      .then((data: any) => {
+        const mappedBanks = data.map((b: any) => ({
+          label: b.name,
+          value: b.name,
+        }));
+        setBankOptions(mappedBanks);
+      })
+      .catch((err) => console.error("Failed to load banks", err));
+  }, []);
 
   const handlePermStateChange = (newState: string) => {
     if (newState !== formData.state) {
       updateField("state", newState);
-      updateField("city", ""); 
+      updateField("city", "");
     }
   };
 
   const handleCurrStateChange = (newState: string) => {
     if (newState !== formData.currentState) {
       updateField("currentState", newState);
-      updateField("currentCity", ""); 
+      updateField("currentCity", "");
     }
   };
 
@@ -46,7 +75,10 @@ export function AddressBankStep({ formData, updateField, onNextStep, errors }: S
           label="Permanent Address"
           value={formData.permanentAddress}
           error={errors.permanentAddress}
-          onChangeText={(text) => { if (isValidAddressInput(text)) updateField("permanentAddress", text); }}
+          onChangeText={(text) => {
+            if (isValidAddressInput(text))
+              updateField("permanentAddress", text);
+          }}
           multiline
         />
 
@@ -73,7 +105,9 @@ export function AddressBankStep({ formData, updateField, onNextStep, errors }: S
           label="PIN Code"
           value={formData.pinCode}
           error={errors.pinCode}
-          onChangeText={(text) => updateField("pinCode", allowOnlyNumbers(text))}
+          onChangeText={(text) =>
+            updateField("pinCode", allowOnlyNumbers(text))
+          }
           keyboardType="numeric"
           maxLength={6}
         />
@@ -82,7 +116,10 @@ export function AddressBankStep({ formData, updateField, onNextStep, errors }: S
           label="Police Station"
           value={formData.permanentPoliceStation}
           error={errors.permanentPoliceStation}
-          onChangeText={(text) => { if (isValidAddressInput(text)) updateField("permanentPoliceStation", text); }}
+          onChangeText={(text) => {
+            if (isValidAddressInput(text))
+              updateField("permanentPoliceStation", text);
+          }}
         />
       </FormSection>
 
@@ -92,7 +129,9 @@ export function AddressBankStep({ formData, updateField, onNextStep, errors }: S
           label="Current Address"
           value={formData.currentAddress}
           error={errors.currentAddress}
-          onChangeText={(text) => { if (isValidAddressInput(text)) updateField("currentAddress", text); }}
+          onChangeText={(text) => {
+            if (isValidAddressInput(text)) updateField("currentAddress", text);
+          }}
           multiline
         />
 
@@ -119,7 +158,9 @@ export function AddressBankStep({ formData, updateField, onNextStep, errors }: S
           label="PIN Code"
           value={formData.currentPinCode}
           error={errors.currentPinCode}
-          onChangeText={(text) => updateField("currentPinCode", allowOnlyNumbers(text))}
+          onChangeText={(text) =>
+            updateField("currentPinCode", allowOnlyNumbers(text))
+          }
           keyboardType="numeric"
           maxLength={6}
         />
@@ -127,17 +168,27 @@ export function AddressBankStep({ formData, updateField, onNextStep, errors }: S
 
       <FormSection title="Bank Details">
         <Input
-          ref={bankNameRef}
-          label="Bank Name"
-          value={formData.bankName}
-          error={errors.bankName}
+          ref={accHolderRef}
+          label="Account Holder Name"
+          value={formData.accountHolderName}
+          error={errors.accountHolderName}
           onChangeText={(text) => {
-            if (isValidNameInput(text)) updateField("bankName", text);
+            if (isValidNameInput(text)) updateField("accountHolderName", text);
           }}
           returnKeyType="next"
-          onSubmitEditing={() => accNumRef.current?.focus()}
           submitBehavior="submit"
         />
+
+        <SearchableDropdown
+          label="Bank Name"
+          placeholder="Select Bank"
+          value={formData.bankName}
+          error={errors.bankName}
+          options={bankOptions}
+          onSelect={(val) => updateField("bankName", val)}
+          required
+        />
+
         <SegmentedInput
           ref={accNumRef}
           label="Account Number"
@@ -153,6 +204,7 @@ export function AddressBankStep({ formData, updateField, onNextStep, errors }: S
           returnKeyType="next"
           onSubmitEditing={() => ifscRef.current?.focus()}
         />
+
         <SegmentedInput
           ref={ifscRef}
           label="IFSC Code"
@@ -166,23 +218,12 @@ export function AddressBankStep({ formData, updateField, onNextStep, errors }: S
             { length: 3, type: "numeric" },
           ]}
           returnKeyType="next"
-          onSubmitEditing={() => branchRef.current?.focus()}
-        />
-        <Input
-          ref={branchRef}
-          label="Branch"
-          value={formData.branch}
-          error={errors.branch}
-          onChangeText={(text) => {
-            if (isValidAddressInput(text)) updateField("branch", text);
-          }}
-          returnKeyType="next"
           onSubmitEditing={() => micrRef.current?.focus()}
-          submitBehavior="submit"
         />
+
         <SegmentedInput
           ref={micrRef}
-          label="MICR Code"
+          label="MICR Code (Optional)"
           value={formData.micrCode}
           error={errors.micrCode}
           onChange={(val) => updateField("micrCode", val)}

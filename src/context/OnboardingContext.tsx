@@ -43,10 +43,10 @@ export interface OnboardingData {
     currentPinCode: string; // <-- Added
   };
   bank: {
+    accountHolderName: string;
     bankName: string;
     accountNumber: string;
     ifsc: string;
-    branch: string;
     micr: string;
   };
   emergencyContact: EmergencyContact;
@@ -91,7 +91,13 @@ const INITIAL_DATA: OnboardingData = {
     currentState: "",
     currentPinCode: "", // <-- Added
   },
-  bank: { bankName: "", accountNumber: "", ifsc: "", branch: "", micr: "" },
+  bank: {
+    accountHolderName: "",
+    bankName: "",
+    accountNumber: "",
+    ifsc: "",
+    micr: "",
+  },
   emergencyContact: { name: "", relation: "", mobile: "" },
 
   selfieUri: null,
