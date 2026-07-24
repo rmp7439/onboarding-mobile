@@ -11,6 +11,8 @@ import { EmployeeFormData } from "../../../types/EmployeeForm";
 import { isValidNameInput } from "../../../utils/inputFilters";
 import { formatMobile } from "../../../utils/formatters";
 import { colors, spacing, typography } from "../../../theme";
+import { EDUCATION_OPTIONS } from "@/src/constants/Education";
+import { SearchableDropdown } from "../../index";
 
 interface StepProps {
   formData: EmployeeFormData;
@@ -155,6 +157,15 @@ export function EmploymentPersonalStep({
           onChange={(val) => updateField("bloodGroup", val)}
         />
         {errors.bloodGroup && <Input label="" value="" error={errors.bloodGroup} editable={false} style={{display: 'none'}} />}
+
+        <SearchableDropdown
+          label="Highest Education"
+          value={formData.highestEducation}
+          error={errors.highestEducation}
+          options={EDUCATION_OPTIONS}
+          onSelect={(val) => updateField("highestEducation", val)}
+          required
+        />
       </FormSection>
     </View>
   );

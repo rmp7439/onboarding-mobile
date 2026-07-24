@@ -20,6 +20,26 @@ export const mapBloodGroupFromBackend = (bg: string): string => {
   return map[bg] || bg;
 };
 
+export const mapEducationToBackend = (edu: string): string => {
+  const map: Record<string, string> = {
+    "Illiterate": "ILLITERATE", "Primary": "PRIMARY", "Secondary": "SECONDARY",
+    "Higher Secondary": "HIGHER_SECONDARY", "ITI": "ITI", "Diploma": "DIPLOMA",
+    "Graduate": "GRADUATE", "Post Graduate": "POST_GRADUATE", "Doctorate": "DOCTORATE",
+    "Other": "OTHER"
+  };
+  return map[edu] || "OTHER";
+};
+
+export const mapEducationFromBackend = (edu: string): string => {
+  const map: Record<string, string> = {
+    "ILLITERATE": "Illiterate", "PRIMARY": "Primary", "SECONDARY": "Secondary",
+    "HIGHER_SECONDARY": "Higher Secondary", "ITI": "ITI", "DIPLOMA": "Diploma",
+    "GRADUATE": "Graduate", "POST_GRADUATE": "Post Graduate", "DOCTORATE": "Doctorate",
+    "OTHER": "Other"
+  };
+  return map[edu] || "Other";
+};
+
 export const parseDateString = (dateStr: string): string => {
   const [day, month, year] = dateStr.split('/');
   return new Date(`${year}-${month}-${day}T00:00:00.000Z`).toISOString();
@@ -44,6 +64,7 @@ export const mapEmployeeData = (data: OnboardingData) => {
     husbandName: data.personal.husbandName || null,
     gender: data.personal.gender.toUpperCase(),
     bloodGroup: mapBloodGroup(data.personal.bloodGroup),
+    education: mapEducationToBackend(data.personal.highestEducation),
     dateOfBirth: parseDateString(data.personal.dob),
     joiningDate: parseDateString(data.employment.joiningDate),
     mobile: data.personal.mobile,

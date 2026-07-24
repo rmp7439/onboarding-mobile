@@ -21,6 +21,7 @@ export interface OnboardingData {
     dob: string;
     mobile: string;
     bloodGroup: string;
+    highestEducation: string;
   };
   identity: {
     aadhaar: string;
@@ -70,6 +71,7 @@ const INITIAL_DATA: OnboardingData = {
     dob: "",
     mobile: "",
     bloodGroup: "",
+    highestEducation: "",
   },
   identity: { aadhaar: "", pan: "", uan: "", esic: "", drivingLicence: "" },
   address: { permanent: "", current: "", city: "", state: "", pinCode: "" },

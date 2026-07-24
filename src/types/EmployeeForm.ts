@@ -11,6 +11,7 @@ export interface EmployeeFormData {
   dateOfBirth: string;
   mobileNumber: string;
   bloodGroup: string;
+  highestEducation: string;
   // Identity Details
   aadhaarNumber: string;
   panNumber: string;

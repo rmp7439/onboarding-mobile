@@ -18,6 +18,7 @@ interface EmployeeProfile {
   husbandName?: string;
   gender: string;
   bloodGroup: string;
+  education?: string;
   dateOfBirth?: string;
   joiningDate: string;
   mobile: string;
@@ -295,6 +296,11 @@ export default function ProfileScreen() {
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Blood Group</Text>
           <Text style={styles.detailValue}>{profile.bloodGroup}</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Highest Education</Text>
+          <Text style={styles.detailValue}>{profile.education ? profile.education.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()) : "N/A"}</Text>
         </View>
       </Card>
 
