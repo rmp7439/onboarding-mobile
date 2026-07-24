@@ -48,7 +48,7 @@ export const mapEmployeeData = (data: OnboardingData) => {
     joiningDate: parseDateString(data.employment.joiningDate),
     mobile: data.personal.mobile,
     aadhaar: data.identity.aadhaar,
-    pan: data.identity.pan,
+    pan: data.identity.pan || null,
     uan: data.identity.uan || null,
     esic: data.identity.esic || null,
     permanentAddress: data.address.permanent,

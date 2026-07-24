@@ -1,9 +1,8 @@
 import React, { useRef } from 'react';
 import { View, TextInput } from 'react-native';
-import { Input, SegmentedInput } from '../../index';
+import { Input } from '../../index'; 
 import { FormSection } from '../FormSection';
 import { EmployeeFormData } from '../../../types/EmployeeForm';
-import { allowOnlyNumbers } from '../../../utils/inputFilters';
 
 interface StepProps {
   formData: EmployeeFormData;
@@ -13,8 +12,8 @@ interface StepProps {
 }
 
 export function IdentityStep({ formData, updateField, onNextStep, errors }: StepProps) {
-  const panRef = useRef<{ focus: () => void }>(null);
-  const uanRef = useRef<{ focus: () => void }>(null);
+  const panRef = useRef<TextInput>(null);
+  const uanRef = useRef<TextInput>(null);
   const esicRef = useRef<TextInput>(null);
 
   return (
@@ -25,40 +24,33 @@ export function IdentityStep({ formData, updateField, onNextStep, errors }: Step
           value={formData.aadhaarNumber}
           error={errors.aadhaarNumber}
           onChangeText={(text) => updateField('aadhaarNumber', text)}
-          maxLength={15}
           returnKeyType="next"
           onSubmitEditing={() => panRef.current?.focus()}
           submitBehavior="submit"
         />
         
-        <SegmentedInput
+        <Input
           ref={panRef}
           label="PAN Number"
           value={formData.panNumber}
           error={errors.panNumber}
-          onChange={(val) => updateField('panNumber', val)}
-          segments={[
-            { length: 5, type: 'alpha' },
-            { length: 4, type: 'numeric' },
-            { length: 1, type: 'alpha' },
-          ]}
+          onChangeText={(text) => updateField('panNumber', text.toUpperCase())}
+          autoCapitalize="characters"
           returnKeyType="next"
           onSubmitEditing={() => uanRef.current?.focus()}
+          submitBehavior="submit"
         />
         
-        <SegmentedInput
+        <Input
           ref={uanRef}
           label="UAN Number"
           value={formData.uanNumber}
           error={errors.uanNumber}
-          onChange={(val) => updateField('uanNumber', val)}
-          segments={[
-            { length: 4, type: 'numeric' },
-            { length: 4, type: 'numeric' },
-            { length: 4, type: 'numeric' },
-          ]}
+          onChangeText={(text) => updateField('uanNumber', text)}
+          keyboardType="number-pad"
           returnKeyType="next"
           onSubmitEditing={() => esicRef.current?.focus()}
+          submitBehavior="submit"
         />
         
         <Input 
@@ -66,9 +58,8 @@ export function IdentityStep({ formData, updateField, onNextStep, errors }: Step
           label="ESIC Number" 
           value={formData.esicNumber}
           error={errors.esicNumber} 
-          onChangeText={(text) => updateField('esicNumber', allowOnlyNumbers(text))} 
-          keyboardType="numeric" 
-          maxLength={17} 
+          onChangeText={(text) => updateField('esicNumber', text)} 
+          keyboardType="default"
           returnKeyType="done"
           onSubmitEditing={onNextStep}
         />

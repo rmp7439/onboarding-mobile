@@ -99,21 +99,6 @@ export function useEmployeeForm() {
           formData.aadhaarNumber.trim().length > 0,
           "Required",
         );
-        check(
-          "panNumber",
-          formData.panNumber.length === 10,
-          "Must be 10 characters",
-        );
-        check(
-          "uanNumber",
-          formData.uanNumber.length === 12,
-          "Must be 12 digits",
-        );
-        check(
-          "esicNumber",
-          formData.esicNumber.length === 17,
-          "Must be 17 digits",
-        );
       } else if (step === 3) {
         check(
           "permanentAddress",
